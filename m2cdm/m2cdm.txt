@@ -1,0 +1,115 @@
+Disclaimer
+----------
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+
+Explanation
+-----------
+
+m2cdm version 1.5.1e (2012/01/01) (based on DeXT's mode2cdmaker 1.5.1)
+
+This program is based on DeXT's mode2cdmaker version 1.5.1
+(http://dext.peque.org/xcd/mode2cdmaker-1.5.1-src.zip), with minor
+bug fixes, some improvements and few restrictions concerning command
+line interpretation (filenames in command line is not allowed, except
+paramfile - we need this amendment for correct processing of Russian
+letters in filenames).
+
+Because of historical purposes, :-) we decided to rename original
+readme.txt to Mode2CDMaker.txt and leave it untouched, and to describe
+the program shortly in separate file called m2cdm.txt (i.e. this file
+:-) instead. Howewer, we strongly recommend to read the original
+Mode2CDMaker.txt if you want to understand this program well.
+
+Also, we decided to not include dat2file program with the package.
+
+And one more remark: Elic Megabugger and redtigra are my callsigns,
+and "-= Elicit Gingers =-" are both me and my beloved wife; so we
+suggested to join our nicknames and develop software together. :-)
+
+Usage
+-----
+
+m2cdm -paramfile <parameter-file>
+
+m2cdm -h, m2cdm -help    this help
+
+Commands in paramfile (one per line, command parameter in separate line):
+-v, -volume  volume name (default: RR_XCD)
+-o, -output  output image base name (*.bin, *.toc, *.cue) (default: image)
+-f, -file    add Form1 files
+-m, -movie   add movie (Form2) files (by default)
+-d, -dir     add subdirectory
+-e, -ext     set default extension for Form2 files (default: DAT)
+-c, -dos     assume OEM/DOS charset for input file names
+-x, -extname keep original Form2 file extension
+-s, -single  create a single track image
+-ccd         output CloneCD image (*.img, *.sub, *.ccd)
+-raw         output RAW-96 image (*.img)
+-list        use filelist for input Form1 files
+-paramfile   use secondary parameter file for input (NOT TESTED YET!)
+-isolevel1   force ISO 9660 Level 1 for file names
+-isolevel2   force ISO 9660 Level 2 for file names
+
+
+Credits
+-------
+
+m2cdm is based on mode2cdmaker by DeXT and AlexNoe which is based on
+vcdtools-0.4 by Rainer Johanni. Thanks to all of them.
+
+Also thanks to yas_1975 for caustic :-) testing.
+
+Official homepage: none, but you can contact us or get latest version
+on russian ShareReactor forum, in topic "RR - cd-R eRRoR coRRectoR"
+(http://forum.sharereactor.ru/showthread.php?t=59777 - russian),
+or on Doom9 forum in topic "Error correction for XCD is made"
+(http://forum.doom9.org/showthread.php?t=93048 - english).
+
+-= Elicit Gingers =-
+
+
+History
+-------
+
+2012/11/02 - 1.5.1e - Elicit Gingers
+
+mode2cdmaker.dsp, mode2cdmaker.dsw:
+             renamed for m2cdm.* to be compatible with 8.3
+funcs.h, raw96.h, mkvcdfs.c, vcdisofs.c:
+             some function prototypes added to avoid stupid warning
+defaults.h:  use compilation date instead of predefined one
+
+2007/08/04 - 1.5.1d - Elicit Gingers
+
+defaults.h, mkvcdfs.c, vcdisofs.c:
+             preserve original timestamps of files placed on disc
+
+2006/01/30 - 1.5.1c - Elicit Gingers
+
+mkvcdfs.c:   default volume label changed
+
+2005/05/14 - 1.5.1b - Elic MegaBugger
+
+mkvcdfs.c:   fixed OEM filenames processing
+mkvcdfs.c:   filenames only from paramfile
+vcdisofs.c:  fixed OEM filenames processing
+
+2005/04/10 - 1.5.1a - Elic MegaBugger
+
+mkvcdfs.c:   fixed minor bug when paramfile is not exist
+mode2cdmaker.dsp:
+             .exe name changed to be compatible with 8.3; static link

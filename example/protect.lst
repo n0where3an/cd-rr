@@ -1,0 +1,91 @@
+# (ENG) List of files to be protected
+# (RUS) Список файлов для защиты
+# (ENG) The command before filename can be: -i - to protect, -f - to not protect, -x - to make .xcd-file and protect
+# (RUS) Команда перед именем файла: -i - защищать, -f - не защищать, -x - делать XCD-файл и защищать
+
+-i Makefile
+-i getopt.c
+-i getopt1.c
+-i rr.c
+-i rrdec.c
+-i rrdecode.c
+-i rrenc.c
+-i rrencode.c
+-i rrfile.c
+-i rrlist.c
+-i rrmath.c
+-i rrdec.dsp
+-i rrenc.dsp
+-i rrmath.dsp
+-i rr.dsw
+-i config.h
+-i copyrite.h
+-i getopt.h
+-i list.h
+-i rr.h
+-i rrfile.h
+-i rrl_int.h
+-i rrlist.h
+-i rrm_int.h
+-i rrmath.h
+-i xcdhdrs.h
+-i COPYING.txt
+
+-i win32\rrdec.exe
+-i win32\rrenc.exe
+-i win32\m2cdm.exe
+
+-i doc\manual.enu
+-i doc\todo.enu
+-i doc\whatsnew.enu
+-i doc\errors.rus
+-i doc\history.rus
+-i doc\manual.rus
+-i doc\readme.rus
+-i doc\todo.rus
+-i doc\whatsnew.rus
+-i doc\xcd.rus
+
+-i libwin32\libircmt.lib
+-i libwin32\libmmt.lib
+-i libwin32\rrmath.lib
+
+-i m2cdm\buffer.c
+-i m2cdm\edc_ecc.c
+-i m2cdm\mkvcdfs.c
+-i m2cdm\output.c
+-i m2cdm\raw96.c
+-i m2cdm\vcdisofs.c
+-i m2cdm\mode2cdmaker.dev
+-i m2cdm\m2cdm.dsp
+-i m2cdm\m2cdm.dsw
+-i m2cdm\buffer.h
+-i m2cdm\defaults.h
+-i m2cdm\ecc.h
+-i m2cdm\ecc_tables.h
+-i m2cdm\funcs.h
+-i m2cdm\raw96.h
+-i m2cdm\Makefile.linux
+-i m2cdm\bugs.txt
+-i m2cdm\compatibility.txt
+-i m2cdm\COPYING.txt
+-i m2cdm\m2cdm.txt
+-i m2cdm\Mode2CDMaker.txt
+-i m2cdm\Makefile.win
+
+-i example\readme.enu
+-i example\readme.rus
+-i example\protect.lst
+-x example\sample.avi
+-i example\protect.bat
+-i example\recover.bat
+-i example\rrd_head.mkv
+
+# (ENG) .rrt file (RR-text == input list for RRDEC) wil be generated
+# (RUS) будет сгенерирован rrt-файл (RR-text) - входной список для RRDEC
+-@
+
+# (ENG) .rrd file (RR-data == redundant data) wil be generated
+# (RUS) будет сгенерирован rrd-файл (RR-data) - избыточные (защитные) данные
+-r
+

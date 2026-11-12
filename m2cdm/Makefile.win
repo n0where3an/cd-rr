@@ -1,0 +1,42 @@
+# Project: mode2cdmaker
+# Makefile created by Dev-C++ 4.9.7.0
+
+CPP  = g++.exe
+CC   = gcc.exe
+WINDRES = windres.exe
+RES  = 
+OBJ  = mkvcdfs.o edc_ecc.o vcdisofs.o buffer.o raw96.o output.o $(RES)
+LIBS =  -L"c:/archiv~1/dev-cpp/lib" 
+INCS =  -I"c:/archiv~1/dev-cpp/include" 
+BIN  = mode2cdmaker.exe
+CXXFLAGS = $(INCS) 
+CFLAGS = $(INCS) 
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before mode2cdmaker.exe all-after
+
+
+clean: clean-custom
+	rm -f $(OBJ) $(BIN)
+
+$(BIN): $(OBJ)
+	$(CC) $(OBJ) -o "mode2cdmaker.exe" $(LIBS) $(CFLAGS)
+
+mkvcdfs.o: mkvcdfs.c
+	$(CC) -c mkvcdfs.c -o mkvcdfs.o $(CFLAGS)
+
+edc_ecc.o: edc_ecc.c
+	$(CC) -c edc_ecc.c -o edc_ecc.o $(CFLAGS)
+
+vcdisofs.o: vcdisofs.c
+	$(CC) -c vcdisofs.c -o vcdisofs.o $(CFLAGS)
+
+buffer.o: buffer.c
+	$(CC) -c buffer.c -o buffer.o $(CFLAGS)
+
+raw96.o: raw96.c
+	$(CC) -c raw96.c -o raw96.o $(CFLAGS)
+
+output.o: output.c
+	$(CC) -c output.c -o output.o $(CFLAGS)

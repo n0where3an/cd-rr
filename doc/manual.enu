@@ -1,0 +1,29 @@
+XCD protection: nano-HOWTO
+
+1) russian letters in filenames are highly undesirable! (but still possible :-)
+2) cd into dir which must be protected, and run dir /s /b /a-d >list.txt -
+   and open this file by editor
+3) in list.txt - remove lines about files that are unwanted on disc
+4) context search & replace: "-i " instead of constant part of path - on each
+   line
+5) replace "-i" by "-x" for files desired as mode2-form2; "-i" by "-f" -
+   for files that remains unprotected
+6) add line "-@" (for rr-list) (the most precious file on disc! all other
+   files can be recovered, this file can't; so place it at he beginning
+   of root directory e.g. the safest place on disc)
+   add line "-r" (for rr-data) (after last protected file i.e. after last
+   "-i" or "-x" line)
+7) double check that list is sorted by directory - situation like this
+   -i dir1\file1
+   -i dir2\file2
+   -i dir1file3
+   is TERRIBLY UNWANTED and attempt to mount such image may cause BSOD!
+
+8) run command
+   rrenc -s . -@ list.txt -wi -o list.um2 <protection-size> <rrlist.rrt> <_recvr_\rrdata.rrd>
+
+9) you can make the image:
+   m2cdm -paramfile list.um2
+
+
+PS. Our home site: http://forum.sharereactor.ru/showthread.php?t=59777

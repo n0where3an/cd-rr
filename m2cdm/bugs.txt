@@ -1,0 +1,16 @@
+Known bugs/problems/incompatibilities:
+
+Nero 5.5.5.3 badly writes Form2 tracks when loading the CUE file on a multiple 
+track image. Workaround: create a single track image and load the BIN file
+instead of the CUE. This bug has been fixed on recent Nero versions.
+
+Alcohol 120% 1.3.5 has a bug regarding the relative offsets of each track start 
+as referenced by the CUE file (it treats 01 indexes as 00 indexes so each track 
+starts 2 seconds later!), again only on multiple track mode. Workaround: create 
+a single track image.
+
+Form2 files smaller than 300 Kb cannot be burned in multiple track mode. Use
+single track mode instead for these.
+
+Wildcards don't work on quoted filenames (such as those containing spaces) due
+to a bug in MinGW wildcard expansion.

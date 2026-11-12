@@ -1,0 +1,12 @@
+Simple demo of rrenc/rrdec/m2cdm
+
+protect.bat - computes protection and prepares m2cdm's paramfile
+recover.bat - makes restoration; single parameter required - target-dir
+protect.lst - source file for computing protection
+              (see at end of rrenc's --help for syntax)
+
+protect.bat will create three new files:
+_recvr_\protection.rrd  - redundant data
+_recvr_\protection.rrt  - control file for rrdec
+                          (see at end of rrdec's --help for syntax)
+image\example-image.um2 - control file for m2cdm to create disc image

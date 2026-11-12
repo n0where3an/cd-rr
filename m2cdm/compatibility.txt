@@ -1,0 +1,74 @@
+
+Mode2 CD/DVD drives compatibility tests:
+
+80 min media 
+------------
+
+Success: 
+
+Creative 1240E DVD 
+Freecom Beatman CD/MP3 Player (portable MP3 player)
+Hitachi GD-8000 DVD 
+HP 9500i CD-RW
+I/O Magic 8x DVD (*)
+LG DVD (model?) 
+LG CED-8042B CD-RW (slow)
+LG GCE 8160B CD-RW
+Lite-On 12101B (LS3J) CD-RW 
+Lite-On 16101B CD-RW 
+Lite-On 16102B CD-RW 
+Lite-On 24102B (5S07) CD-RW 
+Lite-On LTR-40125S CD-RW
+Lite-On LTR-48125W CD-RW
+Phillips 4801 CD-RW 
+Pioneer 105S DVD 
+Pioneer 116 DVD 
+Pioneer 305S DVD 
+Plextor UltraPlex32 CD-ROM 
+Plextor UltraPlex40 (PX-40TS) CD-ROM (1.05)
+PlexWriter 40/12/40 CD-RW 
+RICHOH MP7163A CD-RW 
+Samsung CD-ROM (model?) 
+Sony CRX-1611 CD-RW
+Teac CD-R 58S CD-R (1.0P)
+Teac W54E CD-RW
+Toshiba SD-M1212 (1R14) DVD
+Toshiba SD-M1612 DVD
+Traxdata 4120Pro CD-R
+Yamaha 2100S (1.0N) CD-RW 
+Generic 32x CD-ROM (several brands)
+
+Failure:
+
+Acer 50x CD-ROM
+Mitsumi CR-4804TE CD-RW
+Samsung 16x DVD
+Samsung SD616T
+Toshiba 12x DVD
+
+(*) = from m2cdm v1.2 upwards
+
+
+90 min media
+------------
+
+Success:
+
+Asus CD-S520/A CD-RW
+Lite-On 12101B (LS3J) CD-RW (with difficulty)
+Lite-On 16102B CD-RW
+Lite-On LTD-163
+Lite-On LTN 486 48x CD-ROM
+Lite-On LTR-40125S
+LG CRD-8400B
+LG GCE-8160B CD-RW
+
+Failure:
+
+HP 9500i CD-RW
+Pioneer 116 DVD
+Pioneer CD-ROM (model?)
+Samsung SC-148C
+Traxdata 4120Pro CD-R
+Yamaha 8424e CD-RW
+

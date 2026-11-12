@@ -1,0 +1,11 @@
+
+objs=mkvcdfs.o vcdisofs.o edc_ecc.o buffer.o raw96.o output.o
+srcs=mkvcdfs.c vcdisofs.c edc_ecc.c buffer.c raw96.c output.c
+output=mode2cdmaker
+
+all:
+	gcc -c $(srcs)
+	gcc -o $(output) $(objs)
+
+clean:
+	-rm -f $(objs) $(output)

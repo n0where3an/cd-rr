@@ -1,0 +1,16 @@
+todo:
+
+- enable/disable of ISO level autoselect;
+- external configuration file(s);
+- reordering of source files before protection (to prevent m2cdm's
+  directory duplicating);
+- .rrt file protection (I already think up how to make it but a lot of work need);
+- intelligible check of rrenc's source filelist;
+- English documentation;
+- multilanguage output;
+- interface to GUI frontend and its description in details;
+- embedded protection of matroska files/streams;
+- interbreed RR and XCD CD-level (see XCD Specifications at http://xcd.sf.net/).
+
+NOT todo:
+- GUI itself (because of lack of skill :( ).

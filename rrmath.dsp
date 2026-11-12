@@ -1,0 +1,145 @@
+# Microsoft Developer Studio Project File - Name="rrmath" - Package Owner=<4>
+# Microsoft Developer Studio Generated Build File, Format Version 6.00
+# ** DO NOT EDIT **
+
+# TARGTYPE "Win32 (x86) Static Library" 0x0104
+
+CFG=rrmath - Win32 Debug
+!MESSAGE This is not a valid makefile. To build this project using NMAKE,
+!MESSAGE use the Export Makefile command and run
+!MESSAGE 
+!MESSAGE NMAKE /f "rrmath.mak".
+!MESSAGE 
+!MESSAGE You can specify a configuration when running NMAKE
+!MESSAGE by defining the macro CFG on the command line. For example:
+!MESSAGE 
+!MESSAGE NMAKE /f "rrmath.mak" CFG="rrmath - Win32 Debug"
+!MESSAGE 
+!MESSAGE Possible choices for configuration are:
+!MESSAGE 
+!MESSAGE "rrmath - Win32 Release" (based on "Win32 (x86) Static Library")
+!MESSAGE "rrmath - Win32 Debug" (based on "Win32 (x86) Static Library")
+!MESSAGE 
+
+# Begin Project
+# PROP AllowPerConfigDependencies 0
+# PROP Scc_ProjName ""
+# PROP Scc_LocalPath ""
+CPP=cl.exe
+RSC=rc.exe
+
+!IF  "$(CFG)" == "rrmath - Win32 Release"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "rrmath___Win32_Release"
+# PROP BASE Intermediate_Dir "rrmath___Win32_Release"
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "rrmath___Win32_Release"
+# PROP Intermediate_Dir "rrmath___Win32_Release"
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
+# ADD CPP /nologo /G6 /Zp16 /MT /W3 /Ot /Og /Ob2 /D "_WINDOWS" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /FAcs /FR /YX /Zd- /O3 /Qsox- /Qopt_report /Qvec_report /Qsfalign16 /GA /GF /Gs /QaxK /Qunroll4 /Qprefetch /c
+# ADD BASE RSC /l 0x419 /d "NDEBUG"
+# ADD RSC /l 0x419 /d "NDEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LIB32=link.exe -lib
+# ADD BASE LIB32 /nologo
+# ADD LIB32 /nologo /out:"win32\rrmath-new.lib"
+
+!ELSEIF  "$(CFG)" == "rrmath - Win32 Debug"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 1
+# PROP BASE Output_Dir "rrmath___Win32_Debug"
+# PROP BASE Intermediate_Dir "rrmath___Win32_Debug"
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 1
+# PROP Output_Dir "rrmath___Win32_Debug"
+# PROP Intermediate_Dir "rrmath___Win32_Debug"
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /GZ /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /FR /YX /FD /GZ /c
+# ADD BASE RSC /l 0x419 /d "_DEBUG"
+# ADD RSC /l 0x419 /d "_DEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LIB32=link.exe -lib
+# ADD BASE LIB32 /nologo
+# ADD LIB32 /nologo /out:"Debug\rrmath.lib"
+
+!ENDIF 
+
+# Begin Target
+
+# Name "rrmath - Win32 Release"
+# Name "rrmath - Win32 Debug"
+# Begin Group "Source Files"
+
+# PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
+# Begin Source File
+
+SOURCE=.\rrdecode.c
+DEP_CPP_RRDEC=\
+	".\rrm_int.h"\
+	".\rrmath.h"\
+	
+
+!IF  "$(CFG)" == "rrmath - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "rrmath - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\rrencode.c
+DEP_CPP_RRENC=\
+	".\rrm_int.h"\
+	".\rrmath.h"\
+	
+
+!IF  "$(CFG)" == "rrmath - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "rrmath - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\rrmath.c
+DEP_CPP_RRMAT=\
+	".\rrm_int.h"\
+	".\rrmath.h"\
+	
+
+!IF  "$(CFG)" == "rrmath - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "rrmath - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# End Group
+# Begin Group "Header Files"
+
+# PROP Default_Filter "h;hpp;hxx;hm;inl"
+# Begin Source File
+
+SOURCE=.\rrm_int.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\rrmath.h
+# End Source File
+# End Group
+# End Target
+# End Project

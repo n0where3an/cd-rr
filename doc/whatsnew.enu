@@ -1,0 +1,144 @@
+Version 1.30 (2012/11/02)
+
+Common:
+- example of use (window$ only).
+
+rrenc, rrdec:
+- port to Linux added.
+
+m2cdm:
+- preserve original timestamps of files placed on disc;
+- some compiler warnings fixed;
+- use compilation date instead of predefined one.
+
+Version 1.29 (2006/02/27)
+Lightweight (rr-1.29.update) package.
+
+Common:
+- cdrtfe (cdrtools & mode2cdmaker front-end) by Oliver Valencia
+  (http://home.arcor.de/kerberos002/) now supports error protection
+  of XCD discs;
+- fixed bug in m2cdm paramfile composer;
+- GUI front-end integration is improved (status line output).
+
+Version 1.28 (2006/02/24)
+Lightweight (rr-1.28.update) package.
+
+Common:
+- fixed bug in command-line parser.
+
+Version 1.27 (2006/02/20)
+Lightweight (rr-1.27.update) package (main files only); designed to use
+together with rr-1.24.extra package.
+
+Common:
+- max linesize of .rrt file increased up to ~1080 bytes (for long
+  comments, especially rrenc's command-line copy);
+- fixed bug in comment processing module (crash if buffer overflows);
+- new RR-list option added: -e <ext> - custom extension of XCD files;
+- GUI front-end integration is slightly improved.
+
+Version 1.26 (2006/02/15)
+Lightweight (rr-1.26.update) package (main files only); designed to use
+together with rr-1.24.extra package.
+
+Common:
+- fixed few bugs in support of absolute paths.
+
+rrenc:
+- new command-line option added: --keep-old-ext (as m2cdm -extname).
+
+rrdec:
+- fixed serious bug in 1.25 which might cause mixing of directories;
+- support for XDC-discs made with -extname option.
+
+Version 1.25 (2006/02/13)
+Lightweight (rr-1.25.update) package (main files only); designed to use
+together with rr-1.24.extra package.
+
+Common:
+- the project has its own site - http://elicit.vn.ua/;
+- few small bugs fixed.
+
+rrenc:
+- support for absolute paths added (in --process-dir mode only)
+  in source filelist (when --source-dir is empty) and in destination
+  files (when --target-dir is empty);
+- new command-line option added: --multi-track
+- new RR-list option added: -u
+- output of command-line into RR-list added;
+- built-in help improved and slightly reordered, info about errorlevels
+  added.
+
+rrdec:
+- new RR-list option added: -u
+- built-in help improved and slightly reordered.
+
+Version 1.24 (2006/01/30)
+Split into two package:
+- rr-1.24.main - exe's and minimum set of texts; main goal is smallest
+  package size;
+- rr-1.24.extra - extended set of docs and other auxiliary files.
+
+Common:
+- few small bugs fixed.
+
+Version 1.23 (2005/06/23) (internal release)
+Lightweight (update) package (.exe files only); designed to replace programs
+in package of version 1.20.
+
+Common:
+- updated: max redundancy sector count is increased up to 60000.
+
+Version 1.22 (2005/06/01) (internal release)
+Lightweight (update) package (.exe files only); designed to replace programs
+in package of version 1.20.
+
+Common:
+- fixed: error in processing of zero-length files.
+
+Version 1.21 (2005/05/25)
+Lightweight (update) package (.exe files only); designed to replace programs
+in package of version 1.20.
+
+Common:
+- fixed: error in polynom-computing library (abnormal temination on
+  non-Intel processors).
+
+rrenc:
+- fixed: error in "--process-dir" switch processing.
+
+Version 1.20 (2005/05/18)
+
+Common:
+- m2cdm-paramfile creation algorythm is slightly improved;
+- added support of Russian letters in filenames;
+- m2cdm-paramfile's "-isolevel1" now autoswitches off if there are filenames
+  not compatible with ISO Level 1 (i.e. 8.3 and [A-Z0-9_]);
+- Russian documentation is made, tranlation into English already started.
+
+rrenc:
+- added switch "--process-dir", concerning to "-d <dir>" lines in source
+  filelist;
+- added switch "--ansi-charset" - assumes source filelist and generated
+  .rrt file must be encoded in ANSI (otherwise OEM assumes - important for
+  Russian letters in filenames);
+- "--target-dir" switch processing fixed (.rrt file was created in wrong
+  directory).
+
+rrdec:
+- "--keep-broken" switch processing fixed (some underrecovered files was
+  marked as totally recovered);
+- added "-a" directive for .rrt file meaning that file is encoded in ANSI
+  (otherwise OEM assumes - important for Russian letters in filenames).
+
+m2cdm:
+- fixed support for Russian letters in filenames in case if no "-isolevel1" /
+  "-isolevel2" parameter;
+- fixed support for OEM/ANSI codepage switch;
+- files/parameters in command line is not allowed now (except "-paramfile"
+  parameter); all parameters is passed thru paramfile.  
+
+Version 1.19 (2005/04/10)
+
+Changelog is lost :-(
