@@ -1,16 +1,15 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
 #ifndef _RRL_INT_H_
 #define _RRL_INT_H_
 
 #include "config.h"
 
 #define RRLIST_MAX_ALIASES 64
-#define RRLIST_MAX_COMMENT_LENGTH 4095 /* нетто, т.е. без финального '\0' */
+#define RRLIST_MAX_COMMENT_LENGTH 4095 /* РЅРµС‚С‚Рѕ, С‚.Рµ. Р±РµР· С„РёРЅР°Р»СЊРЅРѕРіРѕ '\0' */
 //#undef RRLIST_COUNTS
 
 #ifdef RR_LIST_2PASS
 
-#define __KERNEL__
-#define __inline__ __inline
 #include "list.h"
 #include <stdlib.h>
 #include <string.h>
@@ -20,7 +19,7 @@
 #include <sys/types.h>
 
 struct rrlist_dir_s {
-	rrlist_tree_t *tree;	// дерево, которому всё это принадлежит
+	rrlist_tree_t *tree;	// РґРµСЂРµРІРѕ, РєРѕС‚РѕСЂРѕРјСѓ РІСЃС‘ СЌС‚Рѕ РїСЂРёРЅР°РґР»РµР¶РёС‚
 	rrlist_dir_t *parent;	// NULL if root
 	struct list_head
 		subdirs,	// list of
@@ -33,7 +32,7 @@ struct rrlist_dir_s {
 		processed,
 		depth;
 	char
-		*comments,	// в т.ч. и несколько строк - до RRLIST_MAX_COMMENT_LENGTH
+		*comments,	// РІ С‚.С‡. Рё РЅРµСЃРєРѕР»СЊРєРѕ СЃС‚СЂРѕРє - РґРѕ RRLIST_MAX_COMMENT_LENGTH
 		*shortname,	// last name
 		*fullname;	// whole path -- redundant
 	struct list_head
@@ -48,10 +47,10 @@ struct rrlist_tree_s {
 		all_dirs,
 		all_files,
 		all_inodes;
-//#define LAST_FILE( tree ) \
+//#define LAST_FILE( tree )
 //	list_entry( (tree)->all_files.prev, rrlist_file_t, all_files );
 	rrlist_dir_t *last_dir;
-	int comment_len;	// нетто (без '\0')
+	int comment_len;	// РЅРµС‚С‚Рѕ (Р±РµР· '\0')
 #ifndef RRLIST_MAX_ALIASES
 	int max_aliases;
 #endif /* RRLIST_MAX_ALIASES */
@@ -65,7 +64,7 @@ struct rrlist_file_s {
 	rrlist_dir_t *dir;
 	rrlist_inode_t *inode;
 	char
-		*comments,	// в т.ч. и несколько строк - до RRLIST_MAX_COMMENT_LENGTH
+		*comments,	// РІ С‚.С‡. Рё РЅРµСЃРєРѕР»СЊРєРѕ СЃС‚СЂРѕРє - РґРѕ RRLIST_MAX_COMMENT_LENGTH
 		*shortname,	// last name only
 		*fullname;	// whole path -- redundant
 	struct list_head

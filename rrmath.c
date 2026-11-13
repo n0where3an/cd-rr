@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
 #include "rrm_int.h"
 #ifdef RRDEBUG
 __int64 cc1 = 0, cc2 = 0;
@@ -112,15 +113,15 @@ rrtable_t *rr_init( /* int RR_BASELEN, int magic, */
 //      rrbuf_t *rrbuf; // *SynData;
 	int jx, jy;
 	int 
-		size1 = sizeof( rrtable_t ),    // à êóäà äåíåøüñÿ - â ñòåê?
-		size2 = sizeof( rrcode_t ) * rrcount;   // äëÿ pnInit
+		size1 = sizeof( rrtable_t ),    // Ð° ÐºÑƒÐ´Ð° Ð´ÐµÐ½ÐµÑˆÑŒÑÑ - Ð² ÑÑ‚ÐµÐº?
+		size2 = sizeof( rrcode_t ) * rrcount;   // Ð´Ð»Ñ pnInit
 //              rrbufsize = ( rrcount + 1 )/*secsize*/ * sizeof( rrbuf_t )      // rrdata
 //                      + secsize * sizeof( rrbuf_t )   // GXPol
 //                      + secsize * ( rrcount + 1 ) * sizeof( rrcode_t );
 	rrcode_t *p1, *p2;
 
 //              fullsize = size1 + ( ( size2 > rrbufsize ) ? size2 : rrbufsize );
-		// äëÿ îáëàñòè äàííûõ rrbuf_t
+		// Ð´Ð»Ñ Ð¾Ð±Ð»Ð°ÑÑ‚Ð¸ Ð´Ð°Ð½Ð½Ñ‹Ñ… rrbuf_t
 
 	if ( /* ( baselen > RR_BASELEN ) || */ ( ( rr = malloc( size1 ) ) == NULL ) ) 
 		goto err1;

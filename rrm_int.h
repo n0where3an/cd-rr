@@ -1,15 +1,16 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
 #ifndef _RRM_INT_H_
 #define _RRM_INT_H_
 
 #include "rrmath.h"
 
-//#define RR_NO_TABLE	/* обойдёмся без табличной математики */
+//#define RR_NO_TABLE	/* РѕР±РѕР№РґС‘РјСЃСЏ Р±РµР· С‚Р°Р±Р»РёС‡РЅРѕР№ РјР°С‚РµРјР°С‚РёРєРё */
 //#define RRDEBUG
 
 #ifdef RR_NO_TABLE
-//	typedef unsigned int rrmath_t;	// тип внутренних данных
-	#define PAGE_OFFSET		10	/* 2^10 int'ов на страницу */
-	#define LINE_OFFSET		4		/* 2^4 int'ов на строку кэша */
+//	typedef unsigned int rrmath_t;	// С‚РёРї РІРЅСѓС‚СЂРµРЅРЅРёС… РґР°РЅРЅС‹С…
+	#define PAGE_OFFSET		10	/* 2^10 int'РѕРІ РЅР° СЃС‚СЂР°РЅРёС†Сѓ */
+	#define LINE_OFFSET		4		/* 2^4 int'РѕРІ РЅР° СЃС‚СЂРѕРєСѓ РєСЌС€Р° */
 	#define INDEX_OFFSET( index ) \
 		( ( (index) << PAGE_OFFSET ) + ( (index) << LINE_OFFSET ) )
 	#define PARTS( index1, index2 ) \
@@ -64,7 +65,7 @@ struct rrtable_s {
 	int magic;
 	int rrcount;
 	int baselen;
-	int blksize;            // размер блока секторов (в rrdata_t'ах)
+	int blksize;            // СЂР°Р·РјРµСЂ Р±Р»РѕРєР° СЃРµРєС‚РѕСЂРѕРІ (РІ rrdata_t'Р°С…)
 //      rrbuf_t *buf;
 	rrbuf_t *rrdata;        // [ blksize ][ rrcount ]
 	rrbuf_t *syndata;       // [ rrcount ][ blksize ]
@@ -101,7 +102,7 @@ extern __int64 cc1, cc2;
 //#define RR_COUNT
 //#define RR_GFMACRO
 //#define RR_SWAP
-// %%% при включенном съезжает SynData!
+// %%% РїСЂРё РІРєР»СЋС‡РµРЅРЅРѕРј СЃСЉРµР·Р¶Р°РµС‚ SynData!
 //#define RR_MULTDEMO
 
 //#define Clean(D,S)  {int I; for (I=0;I<(S);I++) (D)[I]=0;}
@@ -290,9 +291,9 @@ void pnInit( rr_t *rr );
 void pnMult( const rr_t *rr, int *p1, int *p2, int *r );
 void rr_magic( rr_t *rr, int magic );
 //bool Decode( rr_t *rr, rrdata_t *Data, int DataSize, int *EraLoc, int EraSize );
-int rr_pump(    // "накачка" ремонтных данных одним сектором
-		const rrtable_t *table, rrdata_t *data, // сектор
-		int size, int count     // размер сектора и кол-во секторов
+int rr_pump(    // "РЅР°РєР°С‡РєР°" СЂРµРјРѕРЅС‚РЅС‹С… РґР°РЅРЅС‹С… РѕРґРЅРёРј СЃРµРєС‚РѕСЂРѕРј
+		const rrtable_t *table, rrdata_t *data, // СЃРµРєС‚РѕСЂ
+		int size, int count     // СЂР°Р·РјРµСЂ СЃРµРєС‚РѕСЂР° Рё РєРѕР»-РІРѕ СЃРµРєС‚РѕСЂРѕРІ
 		);
 #endif /*0 */
 

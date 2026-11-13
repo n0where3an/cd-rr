@@ -1,13 +1,14 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
 /*
 TODO:
-	- подключать файл с контрольными суммами, проверять файл по ним
-	  (или хотя бы предупреждать пользователя о непригодности файла)
-	- если много сбоев - перечитывать потенциально-сбойные участки по одному сектору
-	- при чтении короткого файла - сразу открывать ещё пачку, чтобы было быстрее
-	- правильно обрабатывать --no-restore (не-а! - будет другой ключ)
-	(уже) - вывод elapsed/estimated time
-	(уже) - тестирование (корректность восстановления)
-	- грамотную проверку взаимоисключающих ключей (придумать)
+	- РїРѕРґРєР»СЋС‡Р°С‚СЊ С„Р°Р№Р» СЃ РєРѕРЅС‚СЂРѕР»СЊРЅС‹РјРё СЃСѓРјРјР°РјРё, РїСЂРѕРІРµСЂСЏС‚СЊ С„Р°Р№Р» РїРѕ РЅРёРј
+	  (РёР»Рё С…РѕС‚СЏ Р±С‹ РїСЂРµРґСѓРїСЂРµР¶РґР°С‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ Рѕ РЅРµРїСЂРёРіРѕРґРЅРѕСЃС‚Рё С„Р°Р№Р»Р°)
+	- РµСЃР»Рё РјРЅРѕРіРѕ СЃР±РѕРµРІ - РїРµСЂРµС‡РёС‚С‹РІР°С‚СЊ РїРѕС‚РµРЅС†РёР°Р»СЊРЅРѕ-СЃР±РѕР№РЅС‹Рµ СѓС‡Р°СЃС‚РєРё РїРѕ РѕРґРЅРѕРјСѓ СЃРµРєС‚РѕСЂСѓ
+	- РїСЂРё С‡С‚РµРЅРёРё РєРѕСЂРѕС‚РєРѕРіРѕ С„Р°Р№Р»Р° - СЃСЂР°Р·Сѓ РѕС‚РєСЂС‹РІР°С‚СЊ РµС‰С‘ РїР°С‡РєСѓ, С‡С‚РѕР±С‹ Р±С‹Р»Рѕ Р±С‹СЃС‚СЂРµРµ
+	- РїСЂР°РІРёР»СЊРЅРѕ РѕР±СЂР°Р±Р°С‚С‹РІР°С‚СЊ --no-restore (РЅРµ-Р°! - Р±СѓРґРµС‚ РґСЂСѓРіРѕР№ РєР»СЋС‡)
+	(СѓР¶Рµ) - РІС‹РІРѕРґ elapsed/estimated time
+	(СѓР¶Рµ) - С‚РµСЃС‚РёСЂРѕРІР°РЅРёРµ (РєРѕСЂСЂРµРєС‚РЅРѕСЃС‚СЊ РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёСЏ)
+	- РіСЂР°РјРѕС‚РЅСѓСЋ РїСЂРѕРІРµСЂРєСѓ РІР·Р°РёРјРѕРёСЃРєР»СЋС‡Р°СЋС‰РёС… РєР»СЋС‡РµР№ (РїСЂРёРґСѓРјР°С‚СЊ)
 */
 #include "config.h"
 //#ifdef __WIN32__
@@ -65,9 +66,9 @@ TODO:
 #define PROBE_LEN_MIN 2
 #define PROBE_LEN_MAX 2048
 #define PROBE_LEN_DEFAULT 64
-//#define PROBE_RRCOUNT 10 /* от фонаря */
+//#define PROBE_RRCOUNT 10 /* РѕС‚ С„РѕРЅР°СЂСЏ */
 #define OUT_BLKLEN 24
-#define ABS_MAX_FOR_1PASS 12 /* если сбоев больше ( MAX_FOR_1PASS * 6 ) - на первом проходе check не считать */
+#define ABS_MAX_FOR_1PASS 12 /* РµСЃР»Рё СЃР±РѕРµРІ Р±РѕР»СЊС€Рµ ( MAX_FOR_1PASS * 6 ) - РЅР° РїРµСЂРІРѕРј РїСЂРѕС…РѕРґРµ check РЅРµ СЃС‡РёС‚Р°С‚СЊ */
 #ifndef RR_1PASS_COUNT
 	#define MAX_FOR_1PASS \
 		( ( global_opts.errcount < ABS_MAX_FOR_1PASS ) ? \
@@ -76,15 +77,15 @@ TODO:
 	#define MAX_FOR_1PASS global_opts.max_for_1pass
 #endif /* RR_1PASS_COUNT */
 
-// прочие define'ы
+// РїСЂРѕС‡РёРµ define'С‹
 #ifndef RR_ALLOW_ABSPATH
 	#define NEED_ABSBASE
 #else /* RR_ALLOW_ABSPATH */
-	#define NEED_ABSBASE	1,	/* всегда распяливать base-каталоги до абсолютных */
+	#define NEED_ABSBASE	1,	/* РІСЃРµРіРґР° СЂР°СЃРїСЏР»РёРІР°С‚СЊ base-РєР°С‚Р°Р»РѕРіРё РґРѕ Р°Р±СЃРѕР»СЋС‚РЅС‹С… */
 #endif /* RR_ALLOW_ABSPATH */
 
 const struct option long_opts[] = {
-	{ "help",          0, NULL, 'h' },	// он и в Африке help
+	{ "help",          0, NULL, 'h' },	// РѕРЅ Рё РІ РђС„СЂРёРєРµ help
 	{ "quiet",         0, NULL, 'q' },
 	{ "verbose",       0, NULL, 'v' },
 	{ "overwrite",     0, NULL, 'w' },
@@ -142,18 +143,22 @@ void copyright() {
 void usage( void ) {
 //	char drive[_MAX_DRIVE];
 //	char dir[_MAX_DIR];
-	char fname[_MAX_FNAME], *retname;
+	const char *retname;
+#ifdef __WIN32__
+	char fname[_MAX_FNAME];
+#endif // __WIN32__
 //	char ext[_MAX_EXT];
 #ifdef __WIN32__
 	_splitpath( progname, NULL, NULL, fname, NULL );
 	retname = fname;
 #else // __WIN32__
-	retname = basename( progname );
+	retname = strrchr( progname, '/' );	// basename() may modify its argument
+	retname = ( retname == NULL ) ? progname : retname + 1;
 #endif // __WIN32__
 //	SetConsoleOutputCP( 866 );
 	copyright();
 	rr_printmsg( VERBOSE_QUIET,
-//			"Проверка русских букв\n\n"
+//			"РџСЂРѕРІРµСЂРєР° СЂСѓСЃСЃРєРёС… Р±СѓРєРІ\n\n"
 			"Usage:\n%s "
 #ifndef RR_HELP_OPTS
 			"<switches> [options]\n"
@@ -213,7 +218,7 @@ void usage( void ) {
                                                                    "; default: none -"
 			"\n                                files will be only checked for readability"
 			"\n                                and/or recoverability according to \"-a\""
-//#error "убрать упоминания об -n при ndef RR_NO_RESTORE"
+//#error "СѓР±СЂР°С‚СЊ СѓРїРѕРјРёРЅР°РЅРёСЏ РѕР± -n РїСЂРё ndef RR_NO_RESTORE"
 	#if ( defined( RR_COPY_ONLY ) || defined( RR_NO_RESTORE ) )
 			                                                                          ","
 			"\n                                "
@@ -272,7 +277,7 @@ void usage( void ) {
 					"no \"-t\""
 #else /* RR_OVERWRITE_OLDMODE */
 					"no target specified"
-#error "Доделать"
+#error "Р”РѕРґРµР»Р°С‚СЊ"
 #endif /* RR_OVERWRITE_OLDMODE */
 			")"
 #ifdef RR_KEEP_EXISTING
@@ -500,7 +505,7 @@ char xcd_ext[ 0x10 ] = "";
 //char cur_base[] = ".";
 const char *progname;
 #ifdef RR_STORE_EDC
-	LIST_HEAD( global_list );	//сразу проинициализируем
+	LIST_HEAD( global_list );	//СЃСЂР°Р·Сѓ РїСЂРѕРёРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј
 #endif /* RR_STORE_EDC */
 
 #define SET_FILE_TYPE( type ) \
@@ -529,7 +534,7 @@ const char *progname;
 				( ( tdate = strtok( NULL, " \t\n" ) ) == NULL ) || \
 				( ( rest = strtok( NULL, "\t\n" ) ) == NULL ) || \
 				( ( len = rr_atoi( tlen ) ) < -1 ) || \
-				( ( date = rr_atoi( tdate ) ) < -1 ) ) \
+				( ( date = rr_atotime( tdate ) ) < -1 ) ) \
 			goto sw_err; \
 	} while (0)
 #ifdef RR_DMG_ENTRIES
@@ -600,8 +605,8 @@ static char *rr_combo_name( char *outname, const char *base, const char *name ) 
 #error "TODO"
 	#define PARSE_ABS_NAME \
 		do { \
-			/* если первый символ имени == ':' - считать путь абсолютным, */ \
-			/* :<абс-имя-откуда>|<имя-куда> */ \
+			/* РµСЃР»Рё РїРµСЂРІС‹Р№ СЃРёРјРІРѕР» РёРјРµРЅРё == ':' - СЃС‡РёС‚Р°С‚СЊ РїСѓС‚СЊ Р°Р±СЃРѕР»СЋС‚РЅС‹Рј, */ \
+			/* :<Р°Р±СЃ-РёРјСЏ-РѕС‚РєСѓРґР°>|<РёРјСЏ-РєСѓРґР°> */ \
 			if ( rest[ 0 ] == ':' ) { \
 				t_attrib |= NO_SRCBASE; rest++; \
 			} \
@@ -651,7 +656,7 @@ static char *rr_combo_name( char *outname, const char *base, const char *name ) 
 			} \
 		} while (0)
 #else /* RR_UPDATE_DIR */
-//	#error "А на кой вообще ляд обрабатывать -f / -m без -a ?"
+//	#error "Рђ РЅР° РєРѕР№ РІРѕРѕР±С‰Рµ Р»СЏРґ РѕР±СЂР°Р±Р°С‚С‹РІР°С‚СЊ -f / -m Р±РµР· -a ?"
 	#define CHK_SRC_FILE \
 		do { \
 			int seclen = 0; \
@@ -694,7 +699,7 @@ int get_number( const char *inbuf ) {
 rrchain_t *old_rrdec_prepare( int argc, const char * const *argv,
 		int *max_seclen ) {
 	rrchain_t *in = NULL;
-	int rc, rrcount, infilenum, jx;
+	int rrcount, infilenum, jx;
 //	char outbuf[ 2 *_MAX_PATH ];
 //	M2CDM_FILE_BUFFERS;
 
@@ -721,24 +726,24 @@ nofilenum:
 			argv[ 1 ] );
 		goto err01;
 	}
-// добавим поддержку тестирования для старого формата:
+// РґРѕР±Р°РІРёРј РїРѕРґРґРµСЂР¶РєСѓ С‚РµСЃС‚РёСЂРѕРІР°РЅРёСЏ РґР»СЏ СЃС‚Р°СЂРѕРіРѕ С„РѕСЂРјР°С‚Р°:
 	if ( ( argc != ( infilenum * 2 + 4 ) )
 #ifdef RR_CHECK_OLDMODE
 		&& ( argc != ( infilenum + 3 ) )
-#error "Тут ещё надо подумать - взвести флажок, правильно передать имена..."
+#error "РўСѓС‚ РµС‰С‘ РЅР°РґРѕ РїРѕРґСѓРјР°С‚СЊ - РІР·РІРµСЃС‚Рё С„Р»Р°Р¶РѕРє, РїСЂР°РІРёР»СЊРЅРѕ РїРµСЂРµРґР°С‚СЊ РёРјРµРЅР°..."
 #endif /* RR_CHECK_OLDMODE */
 		)
 		goto nofilenum;
 	rrcount /= RR_STREAMNUM;
 
-// разбор командной строки:
+// СЂР°Р·Р±РѕСЂ РєРѕРјР°РЅРґРЅРѕР№ СЃС‚СЂРѕРєРё:
 	if ( ( in = rr_create( "RRDEC", global_opts.xcd_ext, rrcount * RR_STREAMNUM,
 			NULL, NULL,
 #ifdef RR_UPDATE_DIR
 			NULL,
 #endif /* RR_UPDATE_DIR */
 #ifdef RR_ALLOW_ABSPATH
-			1,	// всегда распяливать base-каталоги до абсолютных
+			1,	// РІСЃРµРіРґР° СЂР°СЃРїСЏР»РёРІР°С‚СЊ base-РєР°С‚Р°Р»РѕРіРё РґРѕ Р°Р±СЃРѕР»СЋС‚РЅС‹С…
 #endif /* RR_ALLOW_ABSPATH */
 			global_opts.verbose_level ) ) == NULL ) {
 		goto err01;
@@ -753,7 +758,7 @@ nofilenum:
 				argv[ 3 + jx + infilenum ],
 #else /* RR_CHECK_OLDMODE */
 				global_opts.check ? argv[ 3 + jx + infilenum ] : NULL,
-#error "проверить/доделать"
+#error "РїСЂРѕРІРµСЂРёС‚СЊ/РґРѕРґРµР»Р°С‚СЊ"
 #endif /* RR_CHECK_OLDMODE */
 				-1, -1, NEED_ALIGN | GLOBAL_ATTRIBS |
 				( global_opts.zero_as_bad ? ZERO_DAMAGED : 0 )
@@ -765,9 +770,8 @@ nofilenum:
 	}
 	*max_seclen = rr_blklen( in );
 	global_opts.tgt_base = empty_line;
-	rc = 0; goto exit;
+	goto exit;
 err01:
-	rc = 1;
 	if ( in ) {
 		rr_discard( in ); in = NULL;
 	}
@@ -839,7 +843,7 @@ int rrdec_create( int rrcount, rrchain_t **in, rrchain_t **all,
 	}
 #endif /* RR_UPDATE_DIR */
 	return ( NO_ERROR );
-// создаём выходной файл:
+// СЃРѕР·РґР°С‘Рј РІС‹С…РѕРґРЅРѕР№ С„Р°Р№Р»:
 	CREATE_M2CDM_FILE;
 }
 #else /*0*/
@@ -887,7 +891,7 @@ int rrdec_create( int rrcount, rrchain_t **in, rrchain_t **all,
 				goto err01; \
 			/* global_opts.src_base = global_opts.tgt_base; */ \
 		} \
-	/* создаём выходной файл: */ \
+	/* СЃРѕР·РґР°С‘Рј РІС‹С…РѕРґРЅРѕР№ С„Р°Р№Р»: */ \
 		CREATE_M2CDM_FILE; \
 	} while (0)
 #endif /*0*/
@@ -931,7 +935,7 @@ rrchain_t *rrdec_prepare( rrchain_t **all, int *max_seclen ) {
 #endif /* RR_KEEP_OLD_EXT */
 	SRC_FILE_BUFFERS( "source RR-list file" );
 	OPEN_SPECIAL_FILE( src, NULL, NULL );
-// первая строка - rrcount:
+// РїРµСЂРІР°СЏ СЃС‚СЂРѕРєР° - rrcount:
 	if ( ( rc = rrc_fgets( src_file, global_opts.filelist,
 			&line, inbuf, INBUFLEN ) ) <= 0 ) {
 		if ( rc < 0 ) goto err01;
@@ -940,7 +944,7 @@ rrchain_t *rrdec_prepare( rrchain_t **all, int *max_seclen ) {
 			CONCAT_NAME( src, desc ), global_opts.filelist );
 		goto err01;
 	}
-//#error "Добавить комментарии перед первой строкой"
+//#error "Р”РѕР±Р°РІРёС‚СЊ РєРѕРјРјРµРЅС‚Р°СЂРёРё РїРµСЂРµРґ РїРµСЂРІРѕР№ СЃС‚СЂРѕРєРѕР№"
 	if (
 #ifndef RR_LEGALZERO
 		( rrcount = get_number( inbuf ) ) < 0
@@ -961,8 +965,8 @@ rrchain_t *rrdec_prepare( rrchain_t **all, int *max_seclen ) {
 	}
 	rrcount /= RR_STREAMNUM;
 
-// разбор файла:
-//#error "Перенести оба rr_create() после SetFileApisToOEM()"
+// СЂР°Р·Р±РѕСЂ С„Р°Р№Р»Р°:
+//#error "РџРµСЂРµРЅРµСЃС‚Рё РѕР±Р° rr_create() РїРѕСЃР»Рµ SetFileApisToOEM()"
 #ifndef RR_OEM_API
 	#error "noRR_OEM_API is not supported already!"
 #if 0
@@ -992,7 +996,7 @@ rrchain_t *rrdec_prepare( rrchain_t **all, int *max_seclen ) {
 #ifndef RR_UPDATE_DIR
 	}
 #endif /* RR_UPDATE_DIR */
-// создаём выходной файл:
+// СЃРѕР·РґР°С‘Рј РІС‹С…РѕРґРЅРѕР№ С„Р°Р№Р»:
 	CREATE_M2CDM_FILE;
 #else /* i.e. not 0 */
 #ifndef RR_CUSTOM_XCD_EXT
@@ -1010,8 +1014,8 @@ rrchain_t *rrdec_prepare( rrchain_t **all, int *max_seclen ) {
 			continue;
 		}
 		switch ( first[ 0 ] ) {
-			case '#':	// комментарий - не трогаем
-			case '\0':	// пустая строка - игнорируем
+			case '#':	// РєРѕРјРјРµРЅС‚Р°СЂРёР№ - РЅРµ С‚СЂРѕРіР°РµРј
+			case '\0':	// РїСѓСЃС‚Р°СЏ СЃС‚СЂРѕРєР° - РёРіРЅРѕСЂРёСЂСѓРµРј
 				continue;
 			default: {
 				goto sw_err;
@@ -1029,11 +1033,11 @@ sw_err2:
 					goto err01;
 				}
 				rest = strtok( NULL, "\t\n" );
-				if ( rest == NULL ) switch ( first[ 1 ] ) {	// ничего нет, кроме ключа
+				if ( rest == NULL ) switch ( first[ 1 ] ) {	// РЅРёС‡РµРіРѕ РЅРµС‚, РєСЂРѕРјРµ РєР»СЋС‡Р°
 					default: {
 						goto sw_err;
 					} break;
-					case '-': {	// конец списка
+					case '-': {	// РєРѕРЅРµС† СЃРїРёСЃРєР°
 						goto eof;
 					} break;
 #ifdef RR_KEEP_OLD_EXT
@@ -1055,7 +1059,7 @@ sw_err2:
 					} break;
 #endif /* RR_OEM_API */
 #ifdef RR_DMG_ENTRIES
-					case 'w': {	// весь файл битый
+					case 'w': {	// РІРµСЃСЊ С„Р°Р№Р» Р±РёС‚С‹Р№
 						if ( rr_markbadsegment( item, 0, 0, -1 ) < NO_ERROR ) {
 							goto sw_err;
 						}
@@ -1116,7 +1120,7 @@ sw_err2:
 							}
 						} break;
 #endif /* RR_CUSTOM_XCD_EXT */
-						case 'd': {	// каталог на XCD
+						case 'd': {	// РєР°С‚Р°Р»РѕРі РЅР° XCD
 #ifdef RR_DEC_PATH
 							if ( strlen( rest ) >= _MAX_PATH )
 								goto sw_err;
@@ -1139,10 +1143,12 @@ sw_err2:
 #endif /* RR_KEEP_OLD_EXT */
 						case 'f': { // form-1 file
 //							PUT_SRC_FILE( first[ 1 ] != 'm', RR_MAYBE_LISTFILE );
-							int len = -1, date = -1,
+							time_t date = -1;
+							int len = -1,
 								t_type = ( first[ 1 ] != 'm' ),
 								t_attrib = GLOBAL_ATTRIBS;
 							char *t_name = RR_MAYBE_LISTFILE; int is_name = 1;
+							(void) is_name;	// РЅСѓР¶РµРЅ С‚РѕР»СЊРєРѕ GEN_M2CDM_SRC_LINE Р±РµР· RR_UPDATE_DIR
 							if ( global_opts.strict_mode ) PARSE_REST;
 							if ( t_name == NULL ) {
 								PARSE_ABS_NAME;
@@ -1153,7 +1159,7 @@ sw_err2:
 							/* CHK_FILE_TYPE( first[ 1 ] != 'm' ); */
 							GEN_M2CDM_SRC_LINE;
 #ifdef RR_NO_RESTORE
-#error "обламывать -n, если есть xcd-файл в незащищённых и не задан -a"
+#error "РѕР±Р»Р°РјС‹РІР°С‚СЊ -n, РµСЃР»Рё РµСЃС‚СЊ xcd-С„Р°Р№Р» РІ РЅРµР·Р°С‰РёС‰С‘РЅРЅС‹С… Рё РЅРµ Р·Р°РґР°РЅ -a"
 #endif /* RR_NO_RESTORE */
 						} break;
 						case 'x':		// RR-protected form-2
@@ -1165,7 +1171,8 @@ sw_err2:
 						case 'I': {	// RR-protected form-1 aligned
 //							PUT_TGT_FILE( ( first[ 1 ] == 'i' ) || ( first[ 1 ] == 'I' ),
 //								isupper( first[ 1 ] ) ? NEED_ALIGN : 0 );
-							int len = -1, date = -1, seclen = 0, \
+							time_t date = -1;
+							int len = -1, seclen = 0, \
 								t_type = ( first[ 1 ] == 'i' ) || ( first[ 1 ] == 'I' )
 									/*, t_align = ( isupper( first[ 1 ] ) ? NEED_ALIGN : 0 )*/;
 							PARSE_REST;
@@ -1210,19 +1217,19 @@ sw_err2:
 									fprintf( m2cdm_file, M2CDM_CMD_VOLUME "\n%s\n", rest );
 							}
 						} break;
-						case 'c': {	// явный параметр для m2cdm
+						case 'c': {	// СЏРІРЅС‹Р№ РїР°СЂР°РјРµС‚СЂ РґР»СЏ m2cdm
 							SET_FILE_TYPE( -1 );
 							if ( m2cdm_file != NULL )
 								fprintf( m2cdm_file, "%s\n", rest );
 						} break;
 #ifdef RR_DMG_ENTRIES
-						case 's': {	// битые секторы от-до
+						case 's': {	// Р±РёС‚С‹Рµ СЃРµРєС‚РѕСЂС‹ РѕС‚-РґРѕ
 							int start, end;
 							PARSE2_REST;
 							if ( rr_markbadsegment( item, 0, start, end ) < NO_ERROR )
 								goto sw_err;
 						} break;
-						case 'b': {	// битые байты от-до
+						case 'b': {	// Р±РёС‚С‹Рµ Р±Р°Р№С‚С‹ РѕС‚-РґРѕ
 							int start, end;
 							PARSE2_REST;
 							if ( rr_markbadsegment( item, 1, start, end ) < NO_ERROR )
@@ -1240,7 +1247,7 @@ sw_err2:
 		CHECK_FERRORS;
 	}
 eof:
-	if ( rc < 0 )	// прочиталось из списка что-то не то либо слишком много
+	if ( rc < 0 )	// РїСЂРѕС‡РёС‚Р°Р»РѕСЃСЊ РёР· СЃРїРёСЃРєР° С‡С‚Рѕ-С‚Рѕ РЅРµ С‚Рѕ Р»РёР±Рѕ СЃР»РёС€РєРѕРј РјРЅРѕРіРѕ
 		goto sw_err2;
 #ifdef RR_CHECK_ISO1
 	if ( m2cdm_file != NULL ) {
@@ -1287,7 +1294,7 @@ exit:
 
 int rr_thorough_read( rrchain_t *rrchain, char *buf, int bufblks ) {
 /* -------------------------------------------- *
- * проход первый с половиной - если много сбоев *
+ * РїСЂРѕС…РѕРґ РїРµСЂРІС‹Р№ СЃ РїРѕР»РѕРІРёРЅРѕР№ - РµСЃР»Рё РјРЅРѕРіРѕ СЃР±РѕРµРІ *
  * -------------------------------------------- */
 	int jx, jy, readiness = 0, readerrs, errcount;
 	if ( bufblks > XCD_BUFBLKS ) bufblks = XCD_BUFBLKS;
@@ -1424,7 +1431,7 @@ static int rr_check_result( rrchain_t *rrchain, rrtable_t *rr, char *buf,
 			errlocs[ jx ] = buf + ( jx * OGM_LEN );
 	}
 	memset( buf, 0, errcount * OGM_LEN );
-//#error "Неинициализированный массив errlocs"
+//#error "РќРµРёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°РЅРЅС‹Р№ РјР°СЃСЃРёРІ errlocs"
 	if ( rr_restore( rr, total_blks / RR_STREAMNUM,
 			OGM_LEN, errcount, errnums, (rrdata_t **) errlocs ) == 0 ) {
 //low_rrdata:
@@ -1432,7 +1439,7 @@ static int rr_check_result( rrchain_t *rrchain, rrtable_t *rr, char *buf,
 	}
 	if ( /*global_opts.check*/ decoy != NULL ) {
 		int check_len = rr_blklen( rrchain );
-		for ( jy = errcount - RR_STREAMNUM; jy < errcount; jy++ ) {	// всегда в конце
+		for ( jy = errcount - RR_STREAMNUM; jy < errcount; jy++ ) {	// РІСЃРµРіРґР° РІ РєРѕРЅС†Рµ
 			char *check_buf = errlocs[ jy ];
 			for ( jx = 0; jx < check_len; jx++ ) if ( check_buf[ jx ] != 0 ) {
 				rr_printmsg( VERBOSE_QUIET, "Extra check FAILED - source files are UNUSABLE!\n" );
@@ -1443,7 +1450,7 @@ static int rr_check_result( rrchain_t *rrchain, rrtable_t *rr, char *buf,
 		errcount -= RR_STREAMNUM;
 	}
 	if ( !( CHECK_ONLY || ( /*global_opts.check*/
-			/*( decoy != NULL ) &&*/ ( errcount == 0 ) ) ) ) {	// только обманка
+			/*( decoy != NULL ) &&*/ ( errcount == 0 ) ) ) ) {	// С‚РѕР»СЊРєРѕ РѕР±РјР°РЅРєР°
 		rr_printmsg( VERBOSE_NORMAL, "Writing repaired sectors...\n" );
 		for ( jx = 0; jx < errcount; jx++ ) {
 			rr_seek( rrchain, errnums[ jx ] );
@@ -1456,7 +1463,7 @@ static int rr_check_result( rrchain_t *rrchain, rrtable_t *rr, char *buf,
 	return ( NO_ERROR );
 }
 #endif /* RR_NEW_ENC */
-int main( int argc, const char * const *argv ) {
+int main( int argc, char **argv ) {
 	int pass_num = 0;
 	rrchain_t *in = NULL;
 //	int out = -1;
@@ -1470,9 +1477,7 @@ int main( int argc, const char * const *argv ) {
 	rrtable_t *rr = NULL;
 //	int reserve; //precision_flag;
 	rrchain_t *all = NULL;
-	time_t start_time, pass_time;
 //	char timebuf[ 0x100 ] = "";
-	rrdata_t *math_buf = NULL;
 //	char default_ext[ sizeof( RR_DEFAULT_XCD_EXT ) + 1 ];
 
 #define PROBE_LEN global_opts.probe_len
@@ -1483,7 +1488,6 @@ int main( int argc, const char * const *argv ) {
 //	int decoy_len, decoy_seclen;
 	rritem_t *decoy = NULL;
 
-	start_time = time( NULL );
 	progname = argv[ 0 ];
 #ifdef __WIN32__
 	SetConsoleTitle( RR_SOFTNAME " (" RR_SOFTDESC ") v" RR_SOFTVER );
@@ -1497,10 +1501,10 @@ int main( int argc, const char * const *argv ) {
 	global_opts.max_for_1pass = ABS_MAX_FOR_1PASS;
 #endif /* RR_1PASS_COUNT */
 /* ------------------------- *
- * Анализ командной строки   *
+ * РђРЅР°Р»РёР· РєРѕРјР°РЅРґРЅРѕР№ СЃС‚СЂРѕРєРё   *
  * --------------------------*/
 //	global_opts.version = -1;
-	if ( ( jx = rr_parse_args( argc, argv, long_opts ) ) < 0 ) {	// кривые аргументы
+	if ( ( jx = rr_parse_args( argc, argv, long_opts ) ) < 0 ) {	// РєСЂРёРІС‹Рµ Р°СЂРіСѓРјРµРЅС‚С‹
 //wrong_cmdline:
 		copyright();
 		rr_printmsg( VERBOSE_QUIET, "Illegal command line" );
@@ -1523,11 +1527,11 @@ wrong_version:
 			rr_printmsg( VERBOSE_QUIET, "Illegal compatibility modes option mix is set" );
 			goto wrong_param;
 		}
-	} else {	// новая версия
-// проверим параметры:
+	} else {	// РЅРѕРІР°СЏ РІРµСЂСЃРёСЏ
+// РїСЂРѕРІРµСЂРёРј РїР°СЂР°РјРµС‚СЂС‹:
 		if ( global_opts.version[ 0 ] != 0 )
 			goto wrong_version;
-		if ( ( global_opts.filelist == NULL ) /* || ( global_opts.errcount < 0 ) */
+		if ( global_opts.filelist == NULL /* || ( global_opts.errcount < 0 ) */
 				/* || ( global_opts.out_base == NULL ) */ ) {
 #ifndef RR_CHECK_ALWAYS
 no_req_opt:
@@ -1539,9 +1543,9 @@ no_req_opt:
 	}
 
 /* ------------------------------------ *
- * Проверка параметров на совместимость *
+ * РџСЂРѕРІРµСЂРєР° РїР°СЂР°РјРµС‚СЂРѕРІ РЅР° СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚СЊ *
  * ------------------------------------ */
-// %%%%%% сделать как-то попроще
+// %%%%%% СЃРґРµР»Р°С‚СЊ РєР°Рє-С‚Рѕ РїРѕРїСЂРѕС‰Рµ
 #ifndef RR_CHECK_ALWAYS
 	if ( ( global_opts.tgt_base == NULL ) && !global_opts.check ) {
 		goto no_req_opt;
@@ -1601,30 +1605,30 @@ no_req_opt:
 		goto wrong_param;
 #endif /* RR_BASE_EXT */
 
-// умолчания:
+// СѓРјРѕР»С‡Р°РЅРёСЏ:
 	if (
 #ifndef RR_CUSTOM_XCD_EXT
 			global_opts.old_compat_mode &&
 #endif /* RR_CUSTOM_XCD_EXT */
-			( global_opts.xcd_ext == NULL ) ) {
+			global_opts.xcd_ext == NULL ) {
 		strcpy( xcd_ext, RR_DEFAULT_XCD_EXT );
 		global_opts.xcd_ext = xcd_ext;
 	}
 
 /* ----------------------------- *
- * обработка списковых файлов    *
+ * РѕР±СЂР°Р±РѕС‚РєР° СЃРїРёСЃРєРѕРІС‹С… С„Р°Р№Р»РѕРІ    *
  * ----------------------------- */
 	rr_printmsg( VERBOSE_INFO, "Pass 0: analyzing and opening files\n" );
 
 	if ( ( in = ( global_opts.old_compat_mode ?
-			old_rrdec_prepare( argc, argv, &max_seclen ) :
+			old_rrdec_prepare( argc, (const char * const *) argv, &max_seclen ) :
 			rrdec_prepare( &all, &max_seclen ) ) ) == NULL ) {
 		goto fatal;
 	}
 	rr_printmsg( VERBOSE_NORMAL, "Recoverable bad sectors limit: %d\n",
 		global_opts.errcount * RR_STREAMNUM );
 /* ----------------------------- *
- * подготовка к обработке данных *
+ * РїРѕРґРіРѕС‚РѕРІРєР° Рє РѕР±СЂР°Р±РѕС‚РєРµ РґР°РЅРЅС‹С… *
  * ----------------------------- */
 	rr_printmsg( VERBOSE_INFO, "\n" );
 	if ( ( all != NULL ) && ( rr_files( all ) == 0 ) ) {
@@ -1648,10 +1652,9 @@ mem_low:
 		goto fatal;
 	}
 	errlocs = (char **) ( buf + buflen );
-	math_buf = (rrdata_t *) buf;
 //	printf( "rr_init() ready. Press any key " ); _getch();
 /* --------------------------------------------------- *
- * Копирование незащищённых файлов (если заказывалось) *
+ * РљРѕРїРёСЂРѕРІР°РЅРёРµ РЅРµР·Р°С‰РёС‰С‘РЅРЅС‹С… С„Р°Р№Р»РѕРІ (РµСЃР»Рё Р·Р°РєР°Р·С‹РІР°Р»РѕСЃСЊ) *
  * --------------------------------------------------- */
 	if (
 #ifdef RR_UPDATE_DIR
@@ -1659,7 +1662,6 @@ mem_low:
 #endif /* RR_UPDATE_DIR */
 			( all != NULL ) ) {
 		OGM_LEN = rr_blklen( all );
-		pass_time = time( NULL );
 		rr_printmsg( VERBOSE_QUIET,
 				"Pass %d: %s non-protected files\n", ++pass_num,
 				CHECK_ONLY ? ( LOOK_ONLY ? "Looking at" : "Checking" ) : "Copying" );
@@ -1678,28 +1680,28 @@ mem_low:
 		all = NULL;
 		rr_printmsg( VERBOSE_QUIET, "\n" ); // \nRecovering protected files..." );
 	}
-	if ( rr_files( in ) == 0 ) {	// защищённых нет
+	if ( rr_files( in ) == 0 ) {	// Р·Р°С‰РёС‰С‘РЅРЅС‹С… РЅРµС‚
 		goto restored_ok;
 	}
 /* ------------------------------------------------------------- *
- * Первый проход: копирование (если надо), проверка (если можно) *
+ * РџРµСЂРІС‹Р№ РїСЂРѕС…РѕРґ: РєРѕРїРёСЂРѕРІР°РЅРёРµ (РµСЃР»Рё РЅР°РґРѕ), РїСЂРѕРІРµСЂРєР° (РµСЃР»Рё РјРѕР¶РЅРѕ) *
  * ------------------------------------------------------------- */
 	OGM_LEN = rr_blklen( in );
 	rr_printmsg( VERBOSE_QUIET, "Pass %d: %s protected files\n", ++pass_num,
 			CHECK_ONLY ? ( LOOK_ONLY ? "Looking at" : "Checking" ) : "Copying" );
-	rr_print( in );	// публикация списка обрабатываемых файлов
-// а вообще - возможно ли?
+	rr_print( in );	// РїСѓР±Р»РёРєР°С†РёСЏ СЃРїРёСЃРєР° РѕР±СЂР°Р±Р°С‚С‹РІР°РµРјС‹С… С„Р°Р№Р»РѕРІ
+// Р° РІРѕРѕР±С‰Рµ - РІРѕР·РјРѕР¶РЅРѕ Р»Рё?
 #ifndef RR_CHECK_ALWAYS
 	if ( ( rrcount = rr_used_rrcount( in, 0 ) ) > ( global_opts.errcount -
-			( global_opts.check ? 1 : 0 ) ) ) {	// увы, восстановление невозможно
-//		assert( !"в rr_append не вылетать, если rrcount исчерпан; "
-//				"на второй проход не ходить" );
+			( global_opts.check ? 1 : 0 ) ) ) {	// СѓРІС‹, РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёРµ РЅРµРІРѕР·РјРѕР¶РЅРѕ
+//		assert( !"РІ rr_append РЅРµ РІС‹Р»РµС‚Р°С‚СЊ, РµСЃР»Рё rrcount РёСЃС‡РµСЂРїР°РЅ; "
+//				"РЅР° РІС‚РѕСЂРѕР№ РїСЂРѕС…РѕРґ РЅРµ С…РѕРґРёС‚СЊ" );
 		no_2pass = 1;
 //		if ( !global_opts.no_restore ) {
 		rr_printmsg( VERBOSE_QUIET,
 				"Sorry... %s is impossible because too much data lost!\n",
 				global_opts.checkonly ? "Extra check" : "Complete recover" );
-//#error "и перед вторым проходом тоже проверить"
+//#error "Рё РїРµСЂРµРґ РІС‚РѕСЂС‹Рј РїСЂРѕС…РѕРґРѕРј С‚РѕР¶Рµ РїСЂРѕРІРµСЂРёС‚СЊ"
 //			goto err;
 //		}
 //		global_opts.check = /*global_opts.checkonly =*/ 0;
@@ -1708,7 +1710,7 @@ mem_low:
 			|| global_opts.copy_only
 	#endif /* RR_COPY_ONLY */
 			) ) {
-		if ( global_opts.check ) {	// готовим контрольный блок
+		if ( global_opts.check ) {	// РіРѕС‚РѕРІРёРј РєРѕРЅС‚СЂРѕР»СЊРЅС‹Р№ Р±Р»РѕРє
 			if ( ( decoy = rr_add_decoy( in, RR_STREAMNUM, 0 ) ) == NULL ) {
 				rr_printmsg( VERBOSE_QUIET,
 						"%s: Unable to initialize extra check\n",
@@ -1736,7 +1738,7 @@ mem_low:
 			}
 		}
 	}
-#error "ndef RR_CHECK_ALWAYS уже не поддерживается"
+#error "ndef RR_CHECK_ALWAYS СѓР¶Рµ РЅРµ РїРѕРґРґРµСЂР¶РёРІР°РµС‚СЃСЏ"
 #else /* RR_CHECK_ALWAYS */
 	if ( global_opts.check ) {
 		if ( ( rrcount = rr_used_rrcount( in, 0 ) ) > global_opts.errcount ) {
@@ -1791,7 +1793,7 @@ mem_low:
 			< NO_ERROR )
 		goto prot_discard;
 /* ------------------------------ *
- * Анализ (после первого прохода) *
+ * РђРЅР°Р»РёР· (РїРѕСЃР»Рµ РїРµСЂРІРѕРіРѕ РїСЂРѕС…РѕРґР°) *
  * ------------------------------ */
 	rrcount = rr_used_rrcount( in, 1 );
 	if ( no_2pass
@@ -1802,7 +1804,7 @@ mem_low:
 			|| global_opts.copy_only
 #endif /* RR_COPY_ONLY */
 			) {
-//		assert( !"Разобраться с rc!" );
+//		assert( !"Р Р°Р·РѕР±СЂР°С‚СЊСЃСЏ СЃ rc!" );
 		if ( rrcount > ( /*( decoy != NULL ) ? 1 :*/ 0 ) ) {
 			rr_printmsg( VERBOSE_QUIET,
 #ifdef RR_CHECK_ALWAYS
@@ -1817,19 +1819,19 @@ mem_low:
 		goto restored_ok;
 	}
 /*
-	if ( ( rrcount <= MAX_FOR_1PASS ) && ( rr != NULL ) ) {	// вписались -
-		goto check_result;	// можно восстанавливать/проверять
+	if ( ( rrcount <= MAX_FOR_1PASS ) && ( rr != NULL ) ) {	// РІРїРёСЃР°Р»РёСЃСЊ -
+		goto check_result;	// РјРѕР¶РЅРѕ РІРѕСЃСЃС‚Р°РЅР°РІР»РёРІР°С‚СЊ/РїСЂРѕРІРµСЂСЏС‚СЊ
 	} else
 */
-//#error "Продолжить здесь"
+//#error "РџСЂРѕРґРѕР»Р¶РёС‚СЊ Р·РґРµСЃСЊ"
 	if ( /* ( MAX_FOR_1PASS > 0 ) && */
 			( ( rrcount > MAX_FOR_1PASS ) || ( rr == NULL ) ) ) {
-		if ( rr != NULL ) {	// всё равно наново пересчитывать
+		if ( rr != NULL ) {	// РІСЃС‘ СЂР°РІРЅРѕ РЅР°РЅРѕРІРѕ РїРµСЂРµСЃС‡РёС‚С‹РІР°С‚СЊ
 			rr_cleanup( rr ); rr = NULL;
 		}
 		if ( rrcount > global_opts.errcount ) {
 			if ( !CHECK_ONLY ) {
-//				assert( !"Ошибок больше нормы - промежуточный проход" );
+//				assert( !"РћС€РёР±РѕРє Р±РѕР»СЊС€Рµ РЅРѕСЂРјС‹ - РїСЂРѕРјРµР¶СѓС‚РѕС‡РЅС‹Р№ РїСЂРѕС…РѕРґ" );
 				rr_printmsg( VERBOSE_QUIET,
 						"\nPass %d: There are too many errors; "
 						"re-reading rough sectors\n", ++pass_num );
@@ -1842,15 +1844,15 @@ mem_low:
 //many_errs:
 				rr_printmsg( VERBOSE_QUIET, "Sorry... Still too many errors!\n"
 						"Try to read this disk in another CD-ROM drive.\n" );
-//				assert( !"Разобраться с rc!" );
+//				assert( !"Р Р°Р·РѕР±СЂР°С‚СЊСЃСЏ СЃ rc!" );
 				goto not_restored;
 //			goto abort;
 			}
 		}
 		/* -------------------------------------------------------- *
-		 * второй проход - собственно проверка и/или восстановление *
+		 * РІС‚РѕСЂРѕР№ РїСЂРѕС…РѕРґ - СЃРѕР±СЃС‚РІРµРЅРЅРѕ РїСЂРѕРІРµСЂРєР° Рё/РёР»Рё РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёРµ *
 		 * -------------------------------------------------------- */
-//		assert( !"Второй проход -- rrcount должен быть актуальным!" );
+//		assert( !"Р’С‚РѕСЂРѕР№ РїСЂРѕС…РѕРґ -- rrcount РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ Р°РєС‚СѓР°Р»СЊРЅС‹Рј!" );
 		rr_printmsg( VERBOSE_QUIET,
 				"\nPass %d: Performing calculations\n", ++pass_num );
 		if ( ( rr = rr_init( rrcount, OGM_LEN * RR_STREAMNUM ) ) == NULL )
@@ -1907,8 +1909,8 @@ fatal:
 				all = NULL;
 			}
 		}
-//#error "Здесь остановимся"
-//		assert( !"Разобраться с rc!" );
+//#error "Р—РґРµСЃСЊ РѕСЃС‚Р°РЅРѕРІРёРјСЃСЏ"
+//		assert( !"Р Р°Р·РѕР±СЂР°С‚СЊСЃСЏ СЃ rc!" );
 //		goto exit;
 	} else {	// rr_check_result >= NO_ERROR
 restored_ok:

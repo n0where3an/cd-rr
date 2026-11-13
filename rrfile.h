@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
 #ifndef __RRFILE_H__
 #define __RRFILE_H__
 
@@ -18,7 +19,7 @@ extern "C" {
 //#define RR_STREAMNUM 6
 #define MAX_BLKNUM /*400000*/ ( RR_STREAMNUM * 65535 )
 
-// need_flags на входе:
+// need_flags РЅР° РІС…РѕРґРµ:
 #define NEED_ALIGN			0x0001
 #define NO_SRCBASE			0x0002
 #define NO_RRPROCESS		0x0004
@@ -42,7 +43,7 @@ extern "C" {
 #endif /* RR_NO_INIT_READ */
 
 
-// need_flags на выходе:
+// need_flags РЅР° РІС‹С…РѕРґРµ:
 #define XCD_INPUT				0x10000
 #define XCD_OUTPUT			0x20000
 
@@ -91,23 +92,23 @@ rrchain_t *rr_create( const char *rrname, const char *xcd_ext,
 		const char *upd_base,
 #endif /* RR_UPDATE_DIR */
 #ifdef RR_ALLOW_ABSPATH
-		int do_full,	// делать/не делать преобразование базовых путей до абсолютных
+		int do_full,	// РґРµР»Р°С‚СЊ/РЅРµ РґРµР»Р°С‚СЊ РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ Р±Р°Р·РѕРІС‹С… РїСѓС‚РµР№ РґРѕ Р°Р±СЃРѕР»СЋС‚РЅС‹С…
 #endif /* RR_ALLOW_ABSPATH */
 		verbose_t verbose );
 //rrchain_t *rr_open( const char **fnames, int fcount, int errcount, 
 //		const char **out_fnames );
-rritem_t *rr_append(		// добавление файла в rr-цепочку
+rritem_t *rr_append(		// РґРѕР±Р°РІР»РµРЅРёРµ С„Р°Р№Р»Р° РІ rr-С†РµРїРѕС‡РєСѓ
 #ifdef RR_STORE_EDC
 		struct list_head *all_files,
 #endif /* RR_STORE_EDC */
-		rrchain_t *rrchain,	// цепочка
-		int seclen,						// длина сектора; == 0 - макс. длина в rchain'е
-		const char *infile,		// имя входного файла (NULL - для спец.случаев)
-		const char *outfile,	// имя выходного файла (NULL, если вых. файл не нужен)
-		int filelen,	// длина файла (для восстановления из XCD) или -1 - не трогать
-		int filetime,	// время модификации	
-		int need_flags );		// надо ли выравнивать файл хвостом по границе кластера;
-												// надо ли игнорировать source base;
+		rrchain_t *rrchain,	// С†РµРїРѕС‡РєР°
+		int seclen,						// РґР»РёРЅР° СЃРµРєС‚РѕСЂР°; == 0 - РјР°РєСЃ. РґР»РёРЅР° РІ rchain'Рµ
+		const char *infile,		// РёРјСЏ РІС…РѕРґРЅРѕРіРѕ С„Р°Р№Р»Р° (NULL - РґР»СЏ СЃРїРµС†.СЃР»СѓС‡Р°РµРІ)
+		const char *outfile,	// РёРјСЏ РІС‹С…РѕРґРЅРѕРіРѕ С„Р°Р№Р»Р° (NULL, РµСЃР»Рё РІС‹С…. С„Р°Р№Р» РЅРµ РЅСѓР¶РµРЅ)
+		int filelen,	// РґР»РёРЅР° С„Р°Р№Р»Р° (РґР»СЏ РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёСЏ РёР· XCD) РёР»Рё -1 - РЅРµ С‚СЂРѕРіР°С‚СЊ
+		time_t filetime,	// РІСЂРµРјСЏ РјРѕРґРёС„РёРєР°С†РёРё
+		int need_flags );		// РЅР°РґРѕ Р»Рё РІС‹СЂР°РІРЅРёРІР°С‚СЊ С„Р°Р№Р» С…РІРѕСЃС‚РѕРј РїРѕ РіСЂР°РЅРёС†Рµ РєР»Р°СЃС‚РµСЂР°;
+												// РЅР°РґРѕ Р»Рё РёРіРЅРѕСЂРёСЂРѕРІР°С‚СЊ source base;
 
 int rr_discard( rrchain_t *rrchain );
 int rr_files( rrchain_t *rrchain );
@@ -146,7 +147,7 @@ const char *rr_srcbase( rrchain_t *rrchain );
 const char *rr_tgtbase( rrchain_t *rrchain );
 
 int rr_lastfile_size( rrchain_t *rrchain );
-int rr_lastfile_time( rrchain_t *rrchain );
+time_t rr_lastfile_time( rrchain_t *rrchain );
 int rr_lastfile_blklen( rrchain_t *rrchain );
 //int rr_lastfile_align( rrchain_t *rrchain );
 //int rr_lastfile_norrprocess( rrchain_t *rrchain );
@@ -173,13 +174,13 @@ rritem_t *rr_add_decoy( rrchain_t *rrchain, int blknum, int seclen );
 char *rr_fullname( char *outname, const char *base, const char *name,
 		const char *ext, const char *type, int do_full );
 #ifdef RR_DMG_ENTRIES
-int rr_byte2blk( rritem_t *file, size_t pos );	// какому блоку принадлежит байт
-int rr_get1st_blk( rritem_t *file );	// с какого блока начинается файл
-int rr_getblks( rritem_t *file );	// сколько блоков в файле
+int rr_byte2blk( rritem_t *file, size_t pos );	// РєР°РєРѕРјСѓ Р±Р»РѕРєСѓ РїСЂРёРЅР°РґР»РµР¶РёС‚ Р±Р°Р№С‚
+int rr_get1st_blk( rritem_t *file );	// СЃ РєР°РєРѕРіРѕ Р±Р»РѕРєР° РЅР°С‡РёРЅР°РµС‚СЃСЏ С„Р°Р№Р»
+int rr_getblks( rritem_t *file );	// СЃРєРѕР»СЊРєРѕ Р±Р»РѕРєРѕРІ РІ С„Р°Р№Р»Рµ
 rrchain_t *rr_getchain( rritem_t *file );
 #endif /* RR_DMG_ENTRIES */
 
-// Всякий мелкий утиль:
+// Р’СЃСЏРєРёР№ РјРµР»РєРёР№ СѓС‚РёР»СЊ:
 unsigned long build_edc( const void *in, unsigned from, unsigned upto );
 
 

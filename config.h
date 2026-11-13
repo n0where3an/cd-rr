@@ -1,35 +1,36 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
-// от этих я уже отказался:
-#undef RR_PROBE_MODE				/* пробный расчёт небольшого кусочка сектора */
+// РѕС‚ СЌС‚РёС… СЏ СѓР¶Рµ РѕС‚РєР°Р·Р°Р»СЃСЏ:
+#undef RR_PROBE_MODE				/* РїСЂРѕР±РЅС‹Р№ СЂР°СЃС‡С‘С‚ РЅРµР±РѕР»СЊС€РѕРіРѕ РєСѓСЃРѕС‡РєР° СЃРµРєС‚РѕСЂР° */
 
-// эти уже работают:
-/*#define RR_FULLPATH_ONLY	*/		/* не задавать относительные пути */
-/*#define RR_OPEN_ON_DEMAND */		/* открывать файлы не все скопом, */ \
-														/* а только по необходимости      */
-#define RR_FLIST_ITSELF			/* в rr-filelist'е отмечать его имя явно, */ \
-														/* переписывать входной в target-dir      */
-#define RR_CHECK						/* приманка - блок, заполненный нулями, */ \
-														/* помеченный как битый                 */
-#define RR_1PASS_COUNT			/* option: кол-во секторов, к-е можно исправить */ \
-														/* при первом проходе, 0 - не пытаться вовсе    */
-#define RR_VCD_AS_ISO		/* разрешить обрабатывать файлы со структурой, */ \
-												/* похожей на mode2form2 (напр., vcd) как ISO  */
-#undef RR_HELP_OPTS			/* явный список опций в help'е */
-#define RR_FILL_BAD			/* сбойный сектор: сразу заполнять копию сектора нулями */
-#define RR_KEEP_BAD			/* не удалять недовосстановленные файлы */
-#define RR_RENAME_BAD		/* недовосстановленные файлы переименовывать в "*.bad" */
-#define RR_DMG_ENTRIES	/* задавать битые секторы/байты записями в RR-list'е */
-#define RR_UPDATE_DIR	/* каталог с более свежими версиями файлов */
-#define RR_COPY_ONLY	/* защищённые файлы только копировать, не восстанавливая */
-#define RR_CHECK_ALWAYS	/* всегда выполнять расширенную проверку */
-#define RR_ENC_TGTBASE	/* rrenc: куда писать rrlist/rrdata */
-#define RR_SHOW_LOST		/* отдельно показывать отсутствующие секторы */
-#define RR_FIN_WKARND		/* workaround ошибки в конце последнего файла */
-#define RR_ERRORLEVEL	/* подсказка по кодам завершения */
-#define RR_EMPTY_DELD	/* трактовать файл нулевой длины в update-dir как удалённый */
-#define RR_NO_INIT_READ	/* не читать файл при определении xcd/non-xcd */
+// СЌС‚Рё СѓР¶Рµ СЂР°Р±РѕС‚Р°СЋС‚:
+/*#define RR_FULLPATH_ONLY	*/		/* РЅРµ Р·Р°РґР°РІР°С‚СЊ РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅС‹Рµ РїСѓС‚Рё */
+/*#define RR_OPEN_ON_DEMAND */		/* РѕС‚РєСЂС‹РІР°С‚СЊ С„Р°Р№Р»С‹ РЅРµ РІСЃРµ СЃРєРѕРїРѕРј, */ \
+														/* Р° С‚РѕР»СЊРєРѕ РїРѕ РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚Рё      */
+#define RR_FLIST_ITSELF			/* РІ rr-filelist'Рµ РѕС‚РјРµС‡Р°С‚СЊ РµРіРѕ РёРјСЏ СЏРІРЅРѕ, */ \
+														/* РїРµСЂРµРїРёСЃС‹РІР°С‚СЊ РІС…РѕРґРЅРѕР№ РІ target-dir      */
+#define RR_CHECK						/* РїСЂРёРјР°РЅРєР° - Р±Р»РѕРє, Р·Р°РїРѕР»РЅРµРЅРЅС‹Р№ РЅСѓР»СЏРјРё, */ \
+														/* РїРѕРјРµС‡РµРЅРЅС‹Р№ РєР°Рє Р±РёС‚С‹Р№                 */
+#define RR_1PASS_COUNT			/* option: РєРѕР»-РІРѕ СЃРµРєС‚РѕСЂРѕРІ, Рє-Рµ РјРѕР¶РЅРѕ РёСЃРїСЂР°РІРёС‚СЊ */ \
+														/* РїСЂРё РїРµСЂРІРѕРј РїСЂРѕС…РѕРґРµ, 0 - РЅРµ РїС‹С‚Р°С‚СЊСЃСЏ РІРѕРІСЃРµ    */
+#define RR_VCD_AS_ISO		/* СЂР°Р·СЂРµС€РёС‚СЊ РѕР±СЂР°Р±Р°С‚С‹РІР°С‚СЊ С„Р°Р№Р»С‹ СЃРѕ СЃС‚СЂСѓРєС‚СѓСЂРѕР№, */ \
+												/* РїРѕС…РѕР¶РµР№ РЅР° mode2form2 (РЅР°РїСЂ., vcd) РєР°Рє ISO  */
+#undef RR_HELP_OPTS			/* СЏРІРЅС‹Р№ СЃРїРёСЃРѕРє РѕРїС†РёР№ РІ help'Рµ */
+#define RR_FILL_BAD			/* СЃР±РѕР№РЅС‹Р№ СЃРµРєС‚РѕСЂ: СЃСЂР°Р·Сѓ Р·Р°РїРѕР»РЅСЏС‚СЊ РєРѕРїРёСЋ СЃРµРєС‚РѕСЂР° РЅСѓР»СЏРјРё */
+#define RR_KEEP_BAD			/* РЅРµ СѓРґР°Р»СЏС‚СЊ РЅРµРґРѕРІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРЅС‹Рµ С„Р°Р№Р»С‹ */
+#define RR_RENAME_BAD		/* РЅРµРґРѕРІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРЅС‹Рµ С„Р°Р№Р»С‹ РїРµСЂРµРёРјРµРЅРѕРІС‹РІР°С‚СЊ РІ "*.bad" */
+#define RR_DMG_ENTRIES	/* Р·Р°РґР°РІР°С‚СЊ Р±РёС‚С‹Рµ СЃРµРєС‚РѕСЂС‹/Р±Р°Р№С‚С‹ Р·Р°РїРёСЃСЏРјРё РІ RR-list'Рµ */
+#define RR_UPDATE_DIR	/* РєР°С‚Р°Р»РѕРі СЃ Р±РѕР»РµРµ СЃРІРµР¶РёРјРё РІРµСЂСЃРёСЏРјРё С„Р°Р№Р»РѕРІ */
+#define RR_COPY_ONLY	/* Р·Р°С‰РёС‰С‘РЅРЅС‹Рµ С„Р°Р№Р»С‹ С‚РѕР»СЊРєРѕ РєРѕРїРёСЂРѕРІР°С‚СЊ, РЅРµ РІРѕСЃСЃС‚Р°РЅР°РІР»РёРІР°СЏ */
+#define RR_CHECK_ALWAYS	/* РІСЃРµРіРґР° РІС‹РїРѕР»РЅСЏС‚СЊ СЂР°СЃС€РёСЂРµРЅРЅСѓСЋ РїСЂРѕРІРµСЂРєСѓ */
+#define RR_ENC_TGTBASE	/* rrenc: РєСѓРґР° РїРёСЃР°С‚СЊ rrlist/rrdata */
+#define RR_SHOW_LOST		/* РѕС‚РґРµР»СЊРЅРѕ РїРѕРєР°Р·С‹РІР°С‚СЊ РѕС‚СЃСѓС‚СЃС‚РІСѓСЋС‰РёРµ СЃРµРєС‚РѕСЂС‹ */
+#define RR_FIN_WKARND		/* workaround РѕС€РёР±РєРё РІ РєРѕРЅС†Рµ РїРѕСЃР»РµРґРЅРµРіРѕ С„Р°Р№Р»Р° */
+#define RR_ERRORLEVEL	/* РїРѕРґСЃРєР°Р·РєР° РїРѕ РєРѕРґР°Рј Р·Р°РІРµСЂС€РµРЅРёСЏ */
+#define RR_EMPTY_DELD	/* С‚СЂР°РєС‚РѕРІР°С‚СЊ С„Р°Р№Р» РЅСѓР»РµРІРѕР№ РґР»РёРЅС‹ РІ update-dir РєР°Рє СѓРґР°Р»С‘РЅРЅС‹Р№ */
+#define RR_NO_INIT_READ	/* РЅРµ С‡РёС‚Р°С‚СЊ С„Р°Р№Р» РїСЂРё РѕРїСЂРµРґРµР»РµРЅРёРё xcd/non-xcd */
 #define RR_LEGALZERO	/* allow zero in len and/or time */
 #define RR_OEM_API		/* setfileapistooem */
 #define RR_BASE_EXT   /* allow m2cdm files with multiple extensions */
@@ -44,29 +45,29 @@
 //#define RR_CHECK_OLDMODE /* allow checking in old compatible mode */
 //#define RR_OVERWRITE_OLDMODE /* allow target overwriting in old compatible mode */
 //#define RR_LIST_2PASS	/* process filelist in separate section */
-#undef RR_STORE_EDC		/* сохранять EDC от массива EDC всех секторов файла */
-//#define RR_NEW_ENC		/* encode путём _де_кодирования */
-#define RR_DEC_PATH		/* в rrdec брать файл из пути при имени, ложить в путь при -d */
-#define RR_IGNORE_DIR /* в rrenc игнорировать записи "-d <dir>" */
-#undef RR_BARE_OUTPUT	/* вывод в stdout в простом виде (для front-end'а)*/
+#undef RR_STORE_EDC		/* СЃРѕС…СЂР°РЅСЏС‚СЊ EDC РѕС‚ РјР°СЃСЃРёРІР° EDC РІСЃРµС… СЃРµРєС‚РѕСЂРѕРІ С„Р°Р№Р»Р° */
+//#define RR_NEW_ENC		/* encode РїСѓС‚С‘Рј _РґРµ_РєРѕРґРёСЂРѕРІР°РЅРёСЏ */
+#define RR_DEC_PATH		/* РІ rrdec Р±СЂР°С‚СЊ С„Р°Р№Р» РёР· РїСѓС‚Рё РїСЂРё РёРјРµРЅРё, Р»РѕР¶РёС‚СЊ РІ РїСѓС‚СЊ РїСЂРё -d */
+#define RR_IGNORE_DIR /* РІ rrenc РёРіРЅРѕСЂРёСЂРѕРІР°С‚СЊ Р·Р°РїРёСЃРё "-d <dir>" */
+#undef RR_BARE_OUTPUT	/* РІС‹РІРѕРґ РІ stdout РІ РїСЂРѕСЃС‚РѕРј РІРёРґРµ (РґР»СЏ front-end'Р°)*/
 #define RR_CHECK_ISO1	/* autocheck for ISO Level 1 compliance */
 // todo
 #ifndef RR_LIST_2PASS
-	#undef RR_TRACK_PATH	/* отслеживать вложенность путей */
+	#undef RR_TRACK_PATH	/* РѕС‚СЃР»РµР¶РёРІР°С‚СЊ РІР»РѕР¶РµРЅРЅРѕСЃС‚СЊ РїСѓС‚РµР№ */
 #endif /* RR_LIST_2PASS */
-#undef RR_PROTECT_RRT	/* защищать .rrt-файл */
+#undef RR_PROTECT_RRT	/* Р·Р°С‰РёС‰Р°С‚СЊ .rrt-С„Р°Р№Р» */
 
-#undef RR_VERBOSE_OPTS	/* при "-v" вывести задействованные опции */
-#undef RR_1PASS_MATCH	/* выделять под буфер для 1-го прохода сколько нужно */
-#undef RR_SUFFICIENT	/* не читать rr-data до конца - брать ровно сколько нужно */
-#undef RR_KEEP_EXISTING	/* если в tgt-dir уже есть файл - не бахать */
-#undef RR_HARDLINKS		/* несколько имён у одного файла */
-#undef RR_GEN_RRLIST	/* rrlist не копировать, а генерировать */
-#undef RR_OLD_RRLIST	/* в rrdec: делать rr-filelist в old mode */
-#undef RR_INPLACE			/* восстанавливать файлы по месту */
-#undef RR_FROMTO_NAME	/* принимать "<from-name> ">" <to_name>" */
-#undef RR_ABS_NAME		/* принимать имена в виде ":<abs-name>" */
-#undef RR_DMG_LIST		/* метить битые секторы по списку */
+#undef RR_VERBOSE_OPTS	/* РїСЂРё "-v" РІС‹РІРµСЃС‚Рё Р·Р°РґРµР№СЃС‚РІРѕРІР°РЅРЅС‹Рµ РѕРїС†РёРё */
+#undef RR_1PASS_MATCH	/* РІС‹РґРµР»СЏС‚СЊ РїРѕРґ Р±СѓС„РµСЂ РґР»СЏ 1-РіРѕ РїСЂРѕС…РѕРґР° СЃРєРѕР»СЊРєРѕ РЅСѓР¶РЅРѕ */
+#undef RR_SUFFICIENT	/* РЅРµ С‡РёС‚Р°С‚СЊ rr-data РґРѕ РєРѕРЅС†Р° - Р±СЂР°С‚СЊ СЂРѕРІРЅРѕ СЃРєРѕР»СЊРєРѕ РЅСѓР¶РЅРѕ */
+#undef RR_KEEP_EXISTING	/* РµСЃР»Рё РІ tgt-dir СѓР¶Рµ РµСЃС‚СЊ С„Р°Р№Р» - РЅРµ Р±Р°С…Р°С‚СЊ */
+#undef RR_HARDLINKS		/* РЅРµСЃРєРѕР»СЊРєРѕ РёРјС‘РЅ Сѓ РѕРґРЅРѕРіРѕ С„Р°Р№Р»Р° */
+#undef RR_GEN_RRLIST	/* rrlist РЅРµ РєРѕРїРёСЂРѕРІР°С‚СЊ, Р° РіРµРЅРµСЂРёСЂРѕРІР°С‚СЊ */
+#undef RR_OLD_RRLIST	/* РІ rrdec: РґРµР»Р°С‚СЊ rr-filelist РІ old mode */
+#undef RR_INPLACE			/* РІРѕСЃСЃС‚Р°РЅР°РІР»РёРІР°С‚СЊ С„Р°Р№Р»С‹ РїРѕ РјРµСЃС‚Сѓ */
+#undef RR_FROMTO_NAME	/* РїСЂРёРЅРёРјР°С‚СЊ "<from-name> ">" <to_name>" */
+#undef RR_ABS_NAME		/* РїСЂРёРЅРёРјР°С‚СЊ РёРјРµРЅР° РІ РІРёРґРµ ":<abs-name>" */
+#undef RR_DMG_LIST		/* РјРµС‚РёС‚СЊ Р±РёС‚С‹Рµ СЃРµРєС‚РѕСЂС‹ РїРѕ СЃРїРёСЃРєСѓ */
 /////////////////////////////////////////////////////////////////////////////
 #ifdef _MSC_VER
 	#define __WIN32__ _WIN32

@@ -41,7 +41,7 @@
                reading problems when no Form2 files where added
     mkvcdfs.c: show actual data written to the CD along with estimated CD size
 
-    2002/07/21 - 1.4.2 - Martin Lück & DeXT
+    2002/07/21 - 1.4.2 - Martin LÃ¼ck & DeXT
 
     mkvcdfs.c: added ML's wildcard code (for MSVC only)
     mkvcdfs.c: added -c option (use DOS charset for input file names)
@@ -512,7 +512,7 @@ int remove_newline(char *name)
 }
 
 #ifdef _MSC_VER
-int add_files(char* pFirstFile, int command) // written by Martin Lück
+int add_files(char* pFirstFile, int command) // written by Martin LÃ¼ck
 {	
 	int		bResult		= 0;
 	int		lNext		= 0;

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
 #ifndef __RRLIST_H__
 #define __RRLIST_H__
 
@@ -34,13 +35,13 @@ rrlist_file_t *rrlist_first_file( rrlist_tree_t *tree );
 rrlist_file_t *rrlist_next_file( rrlist_file_t *file );
 // hardlink:
 rrlist_file_t *rrlist_add_link( rrlist_tree_t *tree, const char *fullname,
-		rrlist_inode_t *inode );	// хм, легко сказать...
-// ну, эти тривиальны:
+		rrlist_inode_t *inode );	// С…Рј, Р»РµРіРєРѕ СЃРєР°Р·Р°С‚СЊ...
+// РЅСѓ, СЌС‚Рё С‚СЂРёРІРёР°Р»СЊРЅС‹:
 char *rrlist_file_name( rrlist_file_t *file );
 rrlist_inode_t *rrlist_file_inode( rrlist_file_t *file );
 
 
-// callback-функции:
+// callback-С„СѓРЅРєС†РёРё:
 #define RRLIST_DIRFUNC_PARM \
 	void *opaque, rrlist_dir_t *dir, const char *fullname, \
 	const char *shortname, int depth, const char *comment
@@ -54,9 +55,9 @@ typedef void (process_file_func_t)( RRLIST_FILEFUNC_PARM );
 
 
 int rrlist_process_tree( rrlist_tree_t *tree, process_dir_func_t *dir_func,
-		process_file_func_t *file_func, void *opaque );	// обход дерева
+		process_file_func_t *file_func, void *opaque );	// РѕР±С…РѕРґ РґРµСЂРµРІР°
 int rrlist_process_files( rrlist_tree_t *tree, process_dir_func_t *dir_func,
-		process_file_func_t *file_func, void *opaque );	// тупо вдоль списка файлов
+		process_file_func_t *file_func, void *opaque );	// С‚СѓРїРѕ РІРґРѕР»СЊ СЃРїРёСЃРєР° С„Р°Р№Р»РѕРІ
 
 #endif /* RR_LIST_2PASS */
 

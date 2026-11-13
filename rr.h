@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
 #ifndef __RR_H__
 #define __RR_H__
 
@@ -64,7 +65,7 @@ typedef enum {
 	VERBOSE_INFO = 2,
 	VERBOSE_DEBUG = 3
 } verbose_t;
-#define CLEAR_LINE 0x1000	/* флаг "чистить строку перед выводом" */
+#define CLEAR_LINE 0x1000	/* С„Р»Р°Рі "С‡РёСЃС‚РёС‚СЊ СЃС‚СЂРѕРєСѓ РїРµСЂРµРґ РІС‹РІРѕРґРѕРј" */
 
 //#include "rrfile.h"
 typedef enum {
@@ -153,7 +154,7 @@ struct rrchain_s;
 typedef struct rrchain_s rrchain_t;
 
 //void usage( void );
-int rr_parse_args( int argc, const char * const *argv, 
+int rr_parse_args( int argc, char * const *argv, 
 		const struct option *long_opts );
 int rr_makedestdir( const char *fullname );
 int rrc_fgets( FILE *file, char *name, int *line, char *buf, int buflen );
@@ -167,7 +168,7 @@ void rr_printstatus( int readiness, time_t start_time, int errors,
 int rr_printmsg( verbose_t verbose, char *fmt, ... );
 int rr_make_seclen( int type );
 #ifdef RR_NEW_ENC
-#if 0 /* и на фига я это впихнул ? */
+#if 0 /* Рё РЅР° С„РёРіР° СЏ СЌС‚Рѕ РІРїРёС…РЅСѓР» ? */
 int rr_readchain( rrchain_t *rrchain, char *buf,
 		int bufblks, int max_dose, rrtable_t *rr, int *error_count );
 int rr_check_result( rrchain_t *rrchain, rrtable_t *rr, char *buf,
@@ -175,7 +176,7 @@ int rr_check_result( rrchain_t *rrchain, rrtable_t *rr, char *buf,
 #endif /*0*/
 #endif /* RR_NEW_ENC */
 
-// для отладки:
+// РґР»СЏ РѕС‚Р»Р°РґРєРё:
 #ifdef MALLOC_DEBUG
 #error "malloc_debug"
 void *rr_guard_malloc( size_t size );
@@ -460,6 +461,8 @@ char *rr_combo_name( char *outname, const char *base, const char *name );
 #else /* RR_LEGALZERO */
 int rr_atoi( const char *inbuf );
 #endif /* RR_LEGALZERO */
+/* РІСЂРµРјСЏ РјРѕРґРёС„РёРєР°С†РёРё РёР· rr-list'Р°: time_t, Р±РµР· РѕР±СЂРµР·Р°РЅРёСЏ РґРѕ int (2038) */
+#define rr_atotime( str ) ( (time_t) strtoll( (str), NULL, 10 ) )
 
 #ifndef __WIN32__
 void  _splitpath(const char* path, char* drive,  char* dir,  char* fname,  char* ext );

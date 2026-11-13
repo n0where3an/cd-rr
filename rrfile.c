@@ -1,8 +1,10 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
 #include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
 #include <string.h>
+#include <limits.h>
 #ifdef __WIN32__
 #include <io.h>
 #else
@@ -25,32 +27,26 @@
 #endif
 
 #include "rr.h"
-#define __KERNEL__
-#define __inline__ __inline
-//#ifdef __WIN32__
 #include "list.h"
-//#else
-//	#include <linux/list.h>
-//#endif
 
 #include "rrfile.h"
 
 #undef RR_DECODETEST
-//#error "Протестировать по сети на живой дискете (с выдёргиванием)"
+//#error "РџСЂРѕС‚РµСЃС‚РёСЂРѕРІР°С‚СЊ РїРѕ СЃРµС‚Рё РЅР° Р¶РёРІРѕР№ РґРёСЃРєРµС‚Рµ (СЃ РІС‹РґС‘СЂРіРёРІР°РЅРёРµРј)"
 #define RR_ALLOW_TRUNC					/* !!! DANGEROUS !!! */
-#define RR_CUT_COPY							/* обрезка копий при закрытии оригиналов */
-#define RR_RECOVER_DELETED			/* восстановление файла, если его нет */
-#undef RR_ONLY_IF_NEED_RESTORE	/* восстанавливать удалённый,   */ \
-																/* только когда он явно заказан */
-#define RR_OPEN_NONPROTECTED		/* пытаться восстановить невосстановимое */
+#define RR_CUT_COPY							/* РѕР±СЂРµР·РєР° РєРѕРїРёР№ РїСЂРё Р·Р°РєСЂС‹С‚РёРё РѕСЂРёРіРёРЅР°Р»РѕРІ */
+#define RR_RECOVER_DELETED			/* РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёРµ С„Р°Р№Р»Р°, РµСЃР»Рё РµРіРѕ РЅРµС‚ */
+#undef RR_ONLY_IF_NEED_RESTORE	/* РІРѕСЃСЃС‚Р°РЅР°РІР»РёРІР°С‚СЊ СѓРґР°Р»С‘РЅРЅС‹Р№,   */ \
+																/* С‚РѕР»СЊРєРѕ РєРѕРіРґР° РѕРЅ СЏРІРЅРѕ Р·Р°РєР°Р·Р°РЅ */
+#define RR_OPEN_NONPROTECTED		/* РїС‹С‚Р°С‚СЊСЃСЏ РІРѕСЃСЃС‚Р°РЅРѕРІРёС‚СЊ РЅРµРІРѕСЃСЃС‚Р°РЅРѕРІРёРјРѕРµ */
 #ifdef RR_LIST_2PASS
-//#define RR_PERSISTENT_NAMES			/* имена файлов не копировать - вполне */ \
-																/* хватит указателей */
+//#define RR_PERSISTENT_NAMES			/* РёРјРµРЅР° С„Р°Р№Р»РѕРІ РЅРµ РєРѕРїРёСЂРѕРІР°С‚СЊ - РІРїРѕР»РЅРµ */
+																/* С…РІР°С‚РёС‚ СѓРєР°Р·Р°С‚РµР»РµР№ */
 #endif /* RR_LIST_2PASS */
 
-/*#define RR_DYN_FILENAMES*/				/* динамическое выделение памяти */ \
-																/* под имена файлов */
-#undef RR_OLD_BLOCK							/* старый алгоритм выбора длины блока */
+/*#define RR_DYN_FILENAMES*/				/* РґРёРЅР°РјРёС‡РµСЃРєРѕРµ РІС‹РґРµР»РµРЅРёРµ РїР°РјСЏС‚Рё */ \
+																/* РїРѕРґ РёРјРµРЅР° С„Р°Р№Р»РѕРІ */
+#undef RR_OLD_BLOCK							/* СЃС‚Р°СЂС‹Р№ Р°Р»РіРѕСЂРёС‚Рј РІС‹Р±РѕСЂР° РґР»РёРЅС‹ Р±Р»РѕРєР° */
 //#define XCD_LEN 2352
 //#define OGM_LEN 2324
 #undef OGM_LEN
@@ -59,117 +55,112 @@
 #pragma pack( 1 )
 //#include "riffhdrs.h"
 typedef enum {
-	FATAL				= 0x0001,	// сбой в копии - продолжать нет смысла?
-	NOTREADABLE	= 0x0002,	// прочесть неоткуда - можно только вычислить1`
-	BAD					= 0x0004,	// сбой в оригинале - не читать
-	SHADY				= 0x0008,	// возможно, сбойный - читать при крайней нужде
-	ROUGH				= 0x0010,	// ненадёжный (EDC не совпал); можно потом перечитать
-	ZEROFILLED	= 0x0020,	// сплошные нули - возможно, попытка восстановления CDCHECK'ом
-	UNTOUCHED		= 0x0040,	// ещё не читанный
-	DUMMY				=	0x0080,	// для выравнивания. всегда с нулями, всегда надёжный
-	MISSING     = 0x0100,	// отсутствующий (или с несовпавшей длиной) файл
-	GOOD				= 0x0400,	// нормально прочитался, можно брать из копии
-	GENERATED   = 0x0800,	// рассчитываемый. eof при чтении, дозапись
-	DECOY_BLK		= 0x1000	// обманка. при чтении сбойный. при записи сохраняет в буфере.
+	FATAL				= 0x0001,	// СЃР±РѕР№ РІ РєРѕРїРёРё - РїСЂРѕРґРѕР»Р¶Р°С‚СЊ РЅРµС‚ СЃРјС‹СЃР»Р°?
+	NOTREADABLE	= 0x0002,	// РїСЂРѕС‡РµСЃС‚СЊ РЅРµРѕС‚РєСѓРґР° - РјРѕР¶РЅРѕ С‚РѕР»СЊРєРѕ РІС‹С‡РёСЃР»РёС‚СЊ1`
+	BAD					= 0x0004,	// СЃР±РѕР№ РІ РѕСЂРёРіРёРЅР°Р»Рµ - РЅРµ С‡РёС‚Р°С‚СЊ
+	SHADY				= 0x0008,	// РІРѕР·РјРѕР¶РЅРѕ, СЃР±РѕР№РЅС‹Р№ - С‡РёС‚Р°С‚СЊ РїСЂРё РєСЂР°Р№РЅРµР№ РЅСѓР¶РґРµ
+	ROUGH				= 0x0010,	// РЅРµРЅР°РґС‘Р¶РЅС‹Р№ (EDC РЅРµ СЃРѕРІРїР°Р»); РјРѕР¶РЅРѕ РїРѕС‚РѕРј РїРµСЂРµС‡РёС‚Р°С‚СЊ
+	ZEROFILLED	= 0x0020,	// СЃРїР»РѕС€РЅС‹Рµ РЅСѓР»Рё - РІРѕР·РјРѕР¶РЅРѕ, РїРѕРїС‹С‚РєР° РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёСЏ CDCHECK'РѕРј
+	UNTOUCHED		= 0x0040,	// РµС‰С‘ РЅРµ С‡РёС‚Р°РЅРЅС‹Р№
+	DUMMY				=	0x0080,	// РґР»СЏ РІС‹СЂР°РІРЅРёРІР°РЅРёСЏ. РІСЃРµРіРґР° СЃ РЅСѓР»СЏРјРё, РІСЃРµРіРґР° РЅР°РґС‘Р¶РЅС‹Р№
+	MISSING     = 0x0100,	// РѕС‚СЃСѓС‚СЃС‚РІСѓСЋС‰РёР№ (РёР»Рё СЃ РЅРµСЃРѕРІРїР°РІС€РµР№ РґР»РёРЅРѕР№) С„Р°Р№Р»
+	GOOD				= 0x0400,	// РЅРѕСЂРјР°Р»СЊРЅРѕ РїСЂРѕС‡РёС‚Р°Р»СЃСЏ, РјРѕР¶РЅРѕ Р±СЂР°С‚СЊ РёР· РєРѕРїРёРё
+	GENERATED   = 0x0800,	// СЂР°СЃСЃС‡РёС‚С‹РІР°РµРјС‹Р№. eof РїСЂРё С‡С‚РµРЅРёРё, РґРѕР·Р°РїРёСЃСЊ
+	DECOY_BLK		= 0x1000	// РѕР±РјР°РЅРєР°. РїСЂРё С‡С‚РµРЅРёРё СЃР±РѕР№РЅС‹Р№. РїСЂРё Р·Р°РїРёСЃРё СЃРѕС…СЂР°РЅСЏРµС‚ РІ Р±СѓС„РµСЂРµ.
 } rrtype_t;
 #define HAS_ERRORS ( FATAL | NOTREADABLE | BAD | SHADY | ROUGH | \
 		MISSING | ZEROFILLED | DECOY_BLK )
 #define NOTCOPIED  ( HAS_ERRORS | UNTOUCHED )
-#define COPIED ( GOOD ) /* %%% разобраться: DUMMY - тоже COPIED или нет? */
+#define COPIED ( GOOD ) /* %%% СЂР°Р·РѕР±СЂР°С‚СЊСЃСЏ: DUMMY - С‚РѕР¶Рµ COPIED РёР»Рё РЅРµС‚? */
 #ifndef __GCC__
 #pragma warning( push )
 #pragma warning( disable: 4201 4200 )
 #endif
-typedef union {
-	struct {
-		rritem_t *rritem;
-		rrtype_t type/*:12*/;
-//		int rfile:20;
-	};
-	struct {
-#ifdef __WIN32__
-		unsigned __int64 sector;
-#else
-		uint64_t sector;
-#endif
-	};
+// Р­Р»РµРјРµРЅС‚ РєР°СЂС‚С‹ СЃРµРєС‚РѕСЂРѕРІ. Р Р°РЅСЊС€Рµ СЌС‚Рѕ Р±С‹Р» union СЃ uint64_t sector, С‡РµСЂРµР· РєРѕС‚РѕСЂС‹Р№
+// СЌР»РµРјРµРЅС‚С‹ РєРѕРїРёСЂРѕРІР°Р»РёСЃСЊ/СЃСЂР°РІРЅРёРІР°Р»РёСЃСЊ С†РµР»РёРєРѕРј; РЅР° 64-Р±РёС‚РЅС‹С… РїР»Р°С‚С„РѕСЂРјР°С… СѓРєР°Р·Р°С‚РµР»СЊ
+// СЃР°Рј Р·Р°РЅРёРјР°РµС‚ 8 Р±Р°Р№С‚, Рё РїРѕР»Рµ type РїСЂРё С‚Р°РєРѕРј РєРѕРїРёСЂРѕРІР°РЅРёРё С‚РµСЂСЏР»РѕСЃСЊ.
+typedef struct {
+	rritem_t *rritem;
+	rrtype_t type/*:12*/;
+//	int rfile:20;
 } rrmap_t;
+#define RRMAP_EQ( a, b ) ( ( (a).rritem == (b).rritem ) && ( (a).type == (b).type ) )
 #pragma pack()
 
 struct rrchain_s {
-	char rrname[ RRNAME_LEN + 1 ];	// имя RR-объекта
-	size_t max_blklen;		// макс. длина блока (сектора) по всем rritem'ам
-	int total_blks;		// общее кол-во блоков в объекте
-	long total_bytes;	// --"------"-- байт ---"----"--
-	int pos_blks;			// текущая позиция в объекте
-	int last_error;				// последний код ошибки
-	int total_files;	// общее кол-во файлов
-	int err_limit;		// предельное кол-во сбойных секторов (величина избыточности)
-										// > 0 только для rrdec, для остальных режимов == 0
-//	int err_count;		// кол-во накопленных сбойных секторов
-	int lost_blks;		// кол-во секторов в потерянных файлах
-//	rrpurpose_t purpose;	// назначение rrchain'а
-	int read_blks;		// текущая макс. длина буфера чтения
-// для записи ремонтных данных:
+	char rrname[ RRNAME_LEN + 1 ];	// РёРјСЏ RR-РѕР±СЉРµРєС‚Р°
+	size_t max_blklen;		// РјР°РєСЃ. РґР»РёРЅР° Р±Р»РѕРєР° (СЃРµРєС‚РѕСЂР°) РїРѕ РІСЃРµРј rritem'Р°Рј
+	int total_blks;		// РѕР±С‰РµРµ РєРѕР»-РІРѕ Р±Р»РѕРєРѕРІ РІ РѕР±СЉРµРєС‚Рµ
+	long total_bytes;	// --"------"-- Р±Р°Р№С‚ ---"----"--
+	int pos_blks;			// С‚РµРєСѓС‰Р°СЏ РїРѕР·РёС†РёСЏ РІ РѕР±СЉРµРєС‚Рµ
+	int last_error;				// РїРѕСЃР»РµРґРЅРёР№ РєРѕРґ РѕС€РёР±РєРё
+	int total_files;	// РѕР±С‰РµРµ РєРѕР»-РІРѕ С„Р°Р№Р»РѕРІ
+	int err_limit;		// РїСЂРµРґРµР»СЊРЅРѕРµ РєРѕР»-РІРѕ СЃР±РѕР№РЅС‹С… СЃРµРєС‚РѕСЂРѕРІ (РІРµР»РёС‡РёРЅР° РёР·Р±С‹С‚РѕС‡РЅРѕСЃС‚Рё)
+										// > 0 С‚РѕР»СЊРєРѕ РґР»СЏ rrdec, РґР»СЏ РѕСЃС‚Р°Р»СЊРЅС‹С… СЂРµР¶РёРјРѕРІ == 0
+//	int err_count;		// РєРѕР»-РІРѕ РЅР°РєРѕРїР»РµРЅРЅС‹С… СЃР±РѕР№РЅС‹С… СЃРµРєС‚РѕСЂРѕРІ
+	int lost_blks;		// РєРѕР»-РІРѕ СЃРµРєС‚РѕСЂРѕРІ РІ РїРѕС‚РµСЂСЏРЅРЅС‹С… С„Р°Р№Р»Р°С…
+//	rrpurpose_t purpose;	// РЅР°Р·РЅР°С‡РµРЅРёРµ rrchain'Р°
+	int read_blks;		// С‚РµРєСѓС‰Р°СЏ РјР°РєСЃ. РґР»РёРЅР° Р±СѓС„РµСЂР° С‡С‚РµРЅРёСЏ
+// РґР»СЏ Р·Р°РїРёСЃРё СЂРµРјРѕРЅС‚РЅС‹С… РґР°РЅРЅС‹С…:
 #ifndef RR_NEW_ENC
 	rritem_t *rrheader;
 #endif /* RR_NEW_ENC */
-// для обманки (check):
+// РґР»СЏ РѕР±РјР°РЅРєРё (check):
 	rritem_t *decoy;
 	int rrcount;
-	verbose_t verbosity;		// уровень болтливости
-// чтобы быстрее рассчитывалось кол-во секторов с ошибками:
+	verbose_t verbosity;		// СѓСЂРѕРІРµРЅСЊ Р±РѕР»С‚Р»РёРІРѕСЃС‚Рё
+// С‡С‚РѕР±С‹ Р±С‹СЃС‚СЂРµРµ СЂР°СЃСЃС‡РёС‚С‹РІР°Р»РѕСЃСЊ РєРѕР»-РІРѕ СЃРµРєС‚РѕСЂРѕРІ СЃ РѕС€РёР±РєР°РјРё:
 	int
-	bad_sectors,				// == -1 - изменилось, надо перечитать
-	untouched_sectors;	// аналогично
-	rritem_t *active_rritem;	// или NULL, если ни один файл не открыт
+	bad_sectors,				// == -1 - РёР·РјРµРЅРёР»РѕСЃСЊ, РЅР°РґРѕ РїРµСЂРµС‡РёС‚Р°С‚СЊ
+	untouched_sectors;	// Р°РЅР°Р»РѕРіРёС‡РЅРѕ
+	rritem_t *active_rritem;	// РёР»Рё NULL, РµСЃР»Рё РЅРё РѕРґРёРЅ С„Р°Р№Р» РЅРµ РѕС‚РєСЂС‹С‚
 	int active_in_handle;
 	int active_out_handle;
 //	int *err_locs;
 	char
-	xcd_base[ _MAX_EXT ],		// типовое расширение для XCD-файлов
-	src_base[ _MAX_PATH ],	// базовый путь для исходных файлов
+	xcd_base[ _MAX_EXT ],		// С‚РёРїРѕРІРѕРµ СЂР°СЃС€РёСЂРµРЅРёРµ РґР»СЏ XCD-С„Р°Р№Р»РѕРІ
+	src_base[ _MAX_PATH ],	// Р±Р°Р·РѕРІС‹Р№ РїСѓС‚СЊ РґР»СЏ РёСЃС…РѕРґРЅС‹С… С„Р°Р№Р»РѕРІ
 #ifdef RR_UPDATE_DIR
-	upd_base[ _MAX_PATH ],	// базовый путь для модифицированных файлов
+	upd_base[ _MAX_PATH ],	// Р±Р°Р·РѕРІС‹Р№ РїСѓС‚СЊ РґР»СЏ РјРѕРґРёС„РёС†РёСЂРѕРІР°РЅРЅС‹С… С„Р°Р№Р»РѕРІ
 #endif /* RR_UPDATE_DIR */
-	tgt_base[ _MAX_PATH ];	// базовый путь для файлов-результатов
+	tgt_base[ _MAX_PATH ];	// Р±Р°Р·РѕРІС‹Р№ РїСѓС‚СЊ РґР»СЏ С„Р°Р№Р»РѕРІ-СЂРµР·СѓР»СЊС‚Р°С‚РѕРІ
 	struct list_head items_list;
 #ifndef RR_NEW_ENC
-	rrmap_t blk_map[ MAX_BLKNUM ];	// карта соответствия секторов файлам
+	rrmap_t blk_map[ MAX_BLKNUM ];	// РєР°СЂС‚Р° СЃРѕРѕС‚РІРµС‚СЃС‚РІРёСЏ СЃРµРєС‚РѕСЂРѕРІ С„Р°Р№Р»Р°Рј
 #else /* RR_NEW_ENC */
-	rrmap_t *blk_map;	// карта соответствия секторов файлам
+	rrmap_t *blk_map;	// РєР°СЂС‚Р° СЃРѕРѕС‚РІРµС‚СЃС‚РІРёСЏ СЃРµРєС‚РѕСЂРѕРІ С„Р°Р№Р»Р°Рј
 #endif /* RR_NEW_ENC */
-	char xcd_buf[ XCD_BUFBLKS * XCD_LEN ];	// %%% потом переделаю на malloc()
-//	rritem_t files[ 0 ];	// список файлов
-	int err_locs[ 0 ];	// номера сбойных секторов
+	char xcd_buf[ XCD_BUFBLKS * XCD_LEN ];	// %%% РїРѕС‚РѕРј РїРµСЂРµРґРµР»Р°СЋ РЅР° malloc()
+//	rritem_t files[ 0 ];	// СЃРїРёСЃРѕРє С„Р°Р№Р»РѕРІ
+	int err_locs[ 0 ];	// РЅРѕРјРµСЂР° СЃР±РѕР№РЅС‹С… СЃРµРєС‚РѕСЂРѕРІ
 };
 struct rritem_s {
 	struct list_head list_item;
 	rrchain_t *rrchain;
 #ifdef RR_DMG_ENTRIES
-//	rrmap_t *item_map;	// первый блок rrmap'а, посвящённый этому файлу
+//	rrmap_t *item_map;	// РїРµСЂРІС‹Р№ Р±Р»РѕРє rrmap'Р°, РїРѕСЃРІСЏС‰С‘РЅРЅС‹Р№ СЌС‚РѕРјСѓ С„Р°Р№Р»Сѓ
 #endif /* RR_DMG_ENTRIES */
 //	int itemnum;
-	int blk_from;			// блок, на который отображается начало файла
-	int len_blks;			// длина файла в блоках
-	size_t in_skip_bytes;		// длина заголовка файла
-//	size_t in_skip_per_blk;	// длина заголовка сектора
+	int blk_from;			// Р±Р»РѕРє, РЅР° РєРѕС‚РѕСЂС‹Р№ РѕС‚РѕР±СЂР°Р¶Р°РµС‚СЃСЏ РЅР°С‡Р°Р»Рѕ С„Р°Р№Р»Р°
+	int len_blks;			// РґР»РёРЅР° С„Р°Р№Р»Р° РІ Р±Р»РѕРєР°С…
+	size_t in_skip_bytes;		// РґР»РёРЅР° Р·Р°РіРѕР»РѕРІРєР° С„Р°Р№Р»Р°
+//	size_t in_skip_per_blk;	// РґР»РёРЅР° Р·Р°РіРѕР»РѕРІРєР° СЃРµРєС‚РѕСЂР°
 	int need_flags;			// NEED_ALIGN | NO_SRCBASE | NO_RRPROCESS | ....
-	size_t len_bytes;		// длина реального файла в байтах
-	size_t native_blklen;	// длина блока для не-XCD-файла (2048 либо 2324 байта)
-	size_t in_blklen;				// длина блока
+	size_t len_bytes;		// РґР»РёРЅР° СЂРµР°Р»СЊРЅРѕРіРѕ С„Р°Р№Р»Р° РІ Р±Р°Р№С‚Р°С…
+	size_t native_blklen;	// РґР»РёРЅР° Р±Р»РѕРєР° РґР»СЏ РЅРµ-XCD-С„Р°Р№Р»Р° (2048 Р»РёР±Рѕ 2324 Р±Р°Р№С‚Р°)
+	size_t in_blklen;				// РґР»РёРЅР° Р±Р»РѕРєР°
 //	blktype_t blktype;
-//	int error;				// код последней ошибки
-//	int pad_blks;			// выравнивание в начале файла (пригодится?)
-//	int pos_bytes;		// позиция после последнего чтения
-	size_t out_blklen;		// длина блока
-	int out_blks;			// записано блоков
-	size_t out_skip_bytes;		// длина заголовка файла
-//	size_t out_skip_per_blk;	// длина заголовка сектора
-//	long out_len_bytes;		// (требуемая) длина реального файла в байтах
+//	int error;				// РєРѕРґ РїРѕСЃР»РµРґРЅРµР№ РѕС€РёР±РєРё
+//	int pad_blks;			// РІС‹СЂР°РІРЅРёРІР°РЅРёРµ РІ РЅР°С‡Р°Р»Рµ С„Р°Р№Р»Р° (РїСЂРёРіРѕРґРёС‚СЃСЏ?)
+//	int pos_bytes;		// РїРѕР·РёС†РёСЏ РїРѕСЃР»Рµ РїРѕСЃР»РµРґРЅРµРіРѕ С‡С‚РµРЅРёСЏ
+	size_t out_blklen;		// РґР»РёРЅР° Р±Р»РѕРєР°
+	int out_blks;			// Р·Р°РїРёСЃР°РЅРѕ Р±Р»РѕРєРѕРІ
+	size_t out_skip_bytes;		// РґР»РёРЅР° Р·Р°РіРѕР»РѕРІРєР° С„Р°Р№Р»Р°
+//	size_t out_skip_per_blk;	// РґР»РёРЅР° Р·Р°РіРѕР»РѕРІРєР° СЃРµРєС‚РѕСЂР°
+//	long out_len_bytes;		// (С‚СЂРµР±СѓРµРјР°СЏ) РґР»РёРЅР° СЂРµР°Р»СЊРЅРѕРіРѕ С„Р°Р№Р»Р° РІ Р±Р°Р№С‚Р°С…
 	time_t filetime;
 	/*size_t*/ size_t filesize;
-//	int expand_blks;		// запас на дозапись RR-данных в файл
+//	int expand_blks;		// Р·Р°РїР°СЃ РЅР° РґРѕР·Р°РїРёСЃСЊ RR-РґР°РЅРЅС‹С… РІ С„Р°Р№Р»
 	const char *out_name;
 	const char *in_name;
 	const char *native_name;
@@ -183,7 +174,7 @@ struct rritem_s {
 #ifdef RR_TRACK_PATH
 //	ritem_t *prev_path, *next_path;
 	struct list_head path_item;
-#error "Дописать"
+#error "Р”РѕРїРёСЃР°С‚СЊ"
 #endif /* RR_TRACK_PATH */
 #ifdef RR_STORE_EDC
 	struct list_head global_list;
@@ -213,9 +204,9 @@ const riffhdr_t riffhdr = {
 	0
 };
 
-//#error "Проверить все случаи rr_fullname на предмет - когда какой do_full"
+//#error "РџСЂРѕРІРµСЂРёС‚СЊ РІСЃРµ СЃР»СѓС‡Р°Рё rr_fullname РЅР° РїСЂРµРґРјРµС‚ - РєРѕРіРґР° РєР°РєРѕР№ do_full"
 char *rr_fullname( char *outname, const char *base, const char *name,
-//#error "Разобраться с ext"
+//#error "Р Р°Р·РѕР±СЂР°С‚СЊСЃСЏ СЃ ext"
 const char *ext, const char *type, int do_full ) {
 	char tmppath[ _MAX_PATH * 2 ];
 	int is_err;
@@ -231,7 +222,7 @@ const char *ext, const char *type, int do_full ) {
 #endif /*__WIN32__*/
 		else if ( !( is_err = ( strlen( tmppath ) >= _MAX_PATH ) ) )
 			strcpy( outname, tmppath );
-		if ( is_err ) {	// слишком длинное
+		if ( is_err ) {	// СЃР»РёС€РєРѕРј РґР»РёРЅРЅРѕРµ
 			//			is_err = errno; //for debuging
 			if (errno == ENOENT) {// && errno == ENOTDIR
 				strcpy( outname, tmppath );
@@ -366,7 +357,14 @@ const char *xcdext ) {
 	ext_up =ext;
 #endif
 	if ( xcdext != NULL ) {
+#ifdef __WIN32__
 		_makepath( xcdext2, NULL, NULL, NULL, xcdext );
+#else /* __WIN32__ */
+		// POSIX-РІРµСЂСЃРёРё: _splitpath() РґР°С‘С‚ СЂР°СЃС€РёСЂРµРЅРёРµ Р±РµР· С‚РѕС‡РєРё,
+		// Р° _makepath() Р±РµР· РёРјРµРЅРё С„Р°Р№Р»Р° РІРѕР·РІСЂР°С‰Р°РµС‚ РїСѓСЃС‚СѓСЋ СЃС‚СЂРѕРєСѓ
+		strncpy( xcdext2, ( xcdext[ 0 ] == '.' ) ? xcdext + 1 : xcdext, _MAX_EXT - 1 );
+		xcdext2[ _MAX_EXT - 1 ] = '\0';
+#endif /* __WIN32__ */
 		if ( xcdname != NULL ) {
 			_makepath( xcdname, drive, dir, fname, xcdext );
 		}
@@ -378,6 +376,8 @@ const char *xcdext ) {
 		}
 #endif /* RR_KEEP_OLD_EXT */
 	}
+	if ( ext[ 0 ] == '\0' )	// С„Р°Р№Р» Р±РµР· СЂР°СЃС€РёСЂРµРЅРёСЏ - РЅРµ XCD
+		return ( 0 );
 	return ( ( ( xcdext != NULL ) && ( strcmp( ext, xcdext2 ) == 0 ) ) ||
 			/* ( strcmp( ext_up, ".dat" ) == 0 ) || */
 		( strcmp( ext_up, RR_DEFAULT_XCD_EXT ) == 0 ) );
@@ -391,7 +391,7 @@ rrchain_t *rr_create( const char *rrname, const char *xcd_ext,
 #ifndef RR_ALLOW_ABSPATH
 	#define DO_ABS_BASE( base ) 1
 #else /* RR_ALLOW_ABSPATH */
-	int do_full,	// делать/не делать преобразование базовых путей до абсолютных
+	int do_full,	// РґРµР»Р°С‚СЊ/РЅРµ РґРµР»Р°С‚СЊ РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ Р±Р°Р·РѕРІС‹С… РїСѓС‚РµР№ РґРѕ Р°Р±СЃРѕР»СЋС‚РЅС‹С…
 #define DO_ABS_BASE( base ) \
 	( do_full || ( ( (base) != NULL ) && ( (base)[0] != '\0' ) ) )
 #endif /* RR_ALLOW_ABSPATH */
@@ -401,7 +401,7 @@ verbose_t verbose ) {
 	int rrsize = sizeof( rrchain_t ) // + fcount * sizeof( rritem_t )
 		+ ( errcount + 1 ) * sizeof( int );
 #ifdef RR_ALLOW_ABSPATH
-//#error "Разобраться: upd_base передаваться не должна, а берётся за текущую"
+//#error "Р Р°Р·РѕР±СЂР°С‚СЊСЃСЏ: upd_base РїРµСЂРµРґР°РІР°С‚СЊСЃСЏ РЅРµ РґРѕР»Р¶РЅР°, Р° Р±РµСЂС‘С‚СЃСЏ Р·Р° С‚РµРєСѓС‰СѓСЋ"
 //	if ( src_base == NULL ) src_base = "";
 //	if ( tgt_base == NULL ) tgt_base = "";
 	#ifdef RR_UPDATE_DIR
@@ -505,7 +505,7 @@ rritem_t * /*int*/ rr_setrrdata( rrchain_t *rrchain, const char *prefixfile,
 const char *rrdatafile, int rrcount, int flags ) {
 	int rc; rritem_t *rrfile = NULL;
 #ifndef RR_NEW_ENC
-	if ( rrchain->rrheader ) {	// уже есть
+	if ( rrchain->rrheader ) {	// СѓР¶Рµ РµСЃС‚СЊ
 //		if ( rrchain->verbosity >= VERBOSE_NORMAL )
 		rr_printmsg( VERBOSE_QUIET,
 			"RR-chain %s: RR-header is already defined\n", rrchain->rrname );
@@ -514,18 +514,18 @@ const char *rrdatafile, int rrcount, int flags ) {
 #else /* RR_NEW_ENC */
 	int jx, jy;
 	rrmap_t sector;
-#error "Нужен двухпроходный алгоритм"
+#error "РќСѓР¶РµРЅ РґРІСѓС…РїСЂРѕС…РѕРґРЅС‹Р№ Р°Р»РіРѕСЂРёС‚Рј"
 #endif /* RR_NEW_ENC */
 	if ( ( rrfile = rr_append( rrchain, rr_blklen( rrchain ), prefixfile,
-					rrdatafile, -1, -1, flags | NEED_ALIGN | NO_SRCBASE ) ) == NULL )	// не добавился?
+					rrdatafile, -1, -1, flags | NEED_ALIGN | NO_SRCBASE ) ) == NULL )	// РЅРµ РґРѕР±Р°РІРёР»СЃСЏ?
 		return ( NULL /*FATAL_ERROR*/ );
 	if ( ( rc = rr_chksize( rrchain, rrcount ) ) != NO_ERROR )
 		return ( /*rc*/ NULL );
-// quick hack: подделаем длину шапочного файла
+// quick hack: РїРѕРґРґРµР»Р°РµРј РґР»РёРЅСѓ С€Р°РїРѕС‡РЅРѕРіРѕ С„Р°Р№Р»Р°
 //	rrfile->expand_blks = rrchain->err_limit;
 	rrfile->filesize = rrfile->native_blklen *
 		( rrfile->len_blks + rrcount );
-// время тоже подделаем:
+// РІСЂРµРјСЏ С‚РѕР¶Рµ РїРѕРґРґРµР»Р°РµРј:
 	rrfile->filetime = /* -1 */ time( NULL );
 #ifndef RR_NEW_ENC
 	rrchain->rrheader = rrfile;
@@ -536,7 +536,7 @@ const char *rrdatafile, int rrcount, int flags ) {
 	rrchain->total_blks += rrchain->rrcount;
 	rrfile->len_blks += rrchain->rrcount;
 	for ( jx = jy; jx < rrchain->total_blks; jx++ ) {
-		rrchain->blk_map[ jx ].sector = sector.sector;
+		rrchain->blk_map[ jx ] = sector;
 	}
 	rrchain->bad_sectors = rrchain->untouched_sectors = -1;
 #endif /* RR_NEW_ENC */
@@ -556,7 +556,7 @@ int rr_putrrdata( rrchain_t *rrchain, char *buf ) {
 	file->len_blks += rrchain->rrcount;
 	rrchain->bad_sectors = rrchain->untouched_sectors = -1;
 	for ( jx = jy; jx < rrchain->total_blks; jx++ ) {
-		rrchain->blk_map[ jx ].sector = sector.sector;
+		rrchain->blk_map[ jx ] = sector;
 		rr_seek( rrchain, jx );
 		if ( ( rc = rr_write( rrchain, buf, 1 ) ) != 1 ) {
 			return ( FATAL_ERROR );
@@ -581,6 +581,7 @@ int rr_putrrdata( rrchain_t *rrchain, char *buf ) {
 		rrchain->lost_blks += file->len_blks; \
 	} while (0)
 
+#define RRF_MSG_LEN ( _MAX_PATH + 0x400 )	// СЂР°Р·РјРµСЂ Р±СѓС„РµСЂР° printf_msg РґР»СЏ rrf_open()
 static int rrf_open( const char *filename, int attrib, int need_flags,
 const char *type, char *printf_msg, int *error, int *fmode ) {
 	int handle, rc;
@@ -596,12 +597,14 @@ const char *type, char *printf_msg, int *error, int *fmode ) {
 		if ( error != NULL )
 			*error = errno;
 		if ( printf_msg != NULL )
-			sprintf( printf_msg, "%s file %s: %s failed: %d - %s", type, filename,
+			// РёРјСЏ - РЅРµ РґР»РёРЅРЅРµРµ _MAX_PATH, РѕСЃС‚Р°Р»СЊРЅРѕРµ РїРѕРјРµС‰Р°РµС‚СЃСЏ РІ 0x400
+			snprintf( printf_msg, RRF_MSG_LEN, "%s file %.*s: %s failed: %d - %s", type,
+				(int) _MAX_PATH, filename,
 				( ( attrib & _O_CREAT ) == _O_CREAT ) ? "create" : "open",
 				rc, strerror( rc ) );
 	}
 	if ( ( fmode != NULL ) && ( ( attrib & _O_CREAT ) != _O_CREAT ) ) {
-                // читаем file_stat существующего файла
+                // С‡РёС‚Р°РµРј file_stat СЃСѓС‰РµСЃС‚РІСѓСЋС‰РµРіРѕ С„Р°Р№Р»Р°
 		struct stat file_stat;
 		rc = fstat (handle, &file_stat);
 		*fmode = (rc == 0 ? file_stat.st_mode : -1 );
@@ -609,18 +612,18 @@ const char *type, char *printf_msg, int *error, int *fmode ) {
 	return ( handle );
 }
 
-static int rr_select(		// выбор+открытие файла в цепочке
-	rrchain_t *rrchain,	// цепочка
-	rritem_t *file,			// описатель файла
-	int *error					// код ошибки (errno)
+static int rr_select(		// РІС‹Р±РѕСЂ+РѕС‚РєСЂС‹С‚РёРµ С„Р°Р№Р»Р° РІ С†РµРїРѕС‡РєРµ
+	rrchain_t *rrchain,	// С†РµРїРѕС‡РєР°
+	rritem_t *file,			// РѕРїРёСЃР°С‚РµР»СЊ С„Р°Р№Р»Р°
+	int *error					// РєРѕРґ РѕС€РёР±РєРё (errno)
 ) {
-	char outbuf[ _MAX_PATH + 0x400 ];
+	char outbuf[ RRF_MSG_LEN ];
 	int in_handle = -1, out_handle = -1;
 	int rc = NO_ERROR;
-	if ( rrchain->active_rritem == file/*->itemnum*/ )	// ничего не меняется
+	if ( rrchain->active_rritem == file/*->itemnum*/ )	// РЅРёС‡РµРіРѕ РЅРµ РјРµРЅСЏРµС‚СЃСЏ
 		return ( NO_ERROR );
 
-// сначала позакрываем старые:
+// СЃРЅР°С‡Р°Р»Р° РїРѕР·Р°РєСЂС‹РІР°РµРј СЃС‚Р°СЂС‹Рµ:
 	if ( rrchain->active_in_handle != -1 ) {
 		close( rrchain->active_in_handle );
 		rrchain->active_in_handle = -1;
@@ -630,17 +633,17 @@ static int rr_select(		// выбор+открытие файла в цепочке
 		rrchain->active_out_handle = -1;
 	}
 	rrchain->active_rritem = /*-1*/NULL;
-	if ( file == NULL )	// просто отключить/закрыть
+	if ( file == NULL )	// РїСЂРѕСЃС‚Рѕ РѕС‚РєР»СЋС‡РёС‚СЊ/Р·Р°РєСЂС‹С‚СЊ
 		return ( NO_ERROR );
 
-// открываем входной:
+// РѕС‚РєСЂС‹РІР°РµРј РІС…РѕРґРЅРѕР№:
 	if ( ( file->read_allow /*full_in_name[ 0 ] != '\0'*/ )	&&
 		( ( in_handle = rrf_open( file->full_in_name, _O_RDONLY,
 						file->need_flags, "source", outbuf, error, NULL ) ) == -1 ) ) {
 		int jx;
 		rrmap_t *map = rrchain->blk_map + file->blk_from;
 		file->read_allow = 0;
-//		assert( !"правильно отметить как неоткрытый! (SOFT_ERROR)" );
+//		assert( !"РїСЂР°РІРёР»СЊРЅРѕ РѕС‚РјРµС‚РёС‚СЊ РєР°Рє РЅРµРѕС‚РєСЂС‹С‚С‹Р№! (SOFT_ERROR)" );
 		for ( jx = 0; jx < file->len_blks; jx++ ) {
 			if ( map->type & ( UNTOUCHED | SHADY | ROUGH ) )
 				map->type = MISSING;
@@ -649,7 +652,7 @@ static int rr_select(		// выбор+открытие файла в цепочке
 		rc = SOFT_ERROR;
 //		goto err1;
 	}
-// и выходной тоже:
+// Рё РІС‹С…РѕРґРЅРѕР№ С‚РѕР¶Рµ:
 	if ( ( file->write_allow /*full_out_name[ 0 ] != '\0'*/ )	&&
 		( ( out_handle = rrf_open( file->full_out_name, _O_RDWR,
 						file->need_flags, "target", outbuf, error, NULL ) ) == -1 ) ) {
@@ -687,10 +690,11 @@ int rr_decoy_len( rrchain_t *rrchain ) {
 rritem_t *rr_add_decoy( rrchain_t *rrchain, int blknum, int seclen ) {
 	rritem_t *file = NULL;
 	int filelen, jx,
-// фиктивные - для CHECK_SECLEN:
-	exactfiletype, in_handle,
-	filetime = -1;
+// С„РёРєС‚РёРІРЅС‹Рµ - РґР»СЏ CHECK_SECLEN:
+	exactfiletype, in_handle;
+	time_t filetime = -1;
 	rrmap_t sector;
+	(void) exactfiletype; (void) in_handle;	// РїРёС€СѓС‚СЃСЏ РІ DUMMY_FILE_PARAMS, Р·РґРµСЃСЊ РЅРµ РЅСѓР¶РЅС‹
 
 	CHECK_SECLEN;
 	filelen = seclen * blknum;
@@ -733,7 +737,7 @@ rritem_t *rr_add_decoy( rrchain_t *rrchain, int blknum, int seclen ) {
 
 	rrchain->bad_sectors = rrchain->untouched_sectors = -1;
 	for ( jx = file->blk_from; jx < rrchain->total_blks; jx++ ) {
-		rrchain->blk_map[ jx ].sector = sector.sector;
+		rrchain->blk_map[ jx ] = sector;
 	}
 	rrchain->decoy = file;
 err1:
@@ -749,34 +753,37 @@ err1:
 	#define RR_FILETYPE_MSG( line )	"%s" line, RR_FILETYPE
 #endif /* RR_UPDATE_DIR */
 
-rritem_t *rr_append(		// добавление файла в rr-цепочку
+rritem_t *rr_append(		// РґРѕР±Р°РІР»РµРЅРёРµ С„Р°Р№Р»Р° РІ rr-С†РµРїРѕС‡РєСѓ
 #ifdef RR_STORE_EDC
 	struct list_head *all_files,
 #endif /* RR_STORE_EDC */
-	rrchain_t *rrchain,	// цепочка
-	int seclen,						// длина сектора; == 0 - макс. длина в rchain'е
-	const char *infile,		// имя входного файла (NULL - для спец.случаев)
-	const char *outfile,	// имя выходного файла (NULL, если вых. файл не нужен)
-	int filelen,	// длина файла (для восстановления из XCD) или -1 - не трогать
-	int filetime,	// время модификации
-int need_flags ) {	// надо ли выравнивать файл хвостом по границе кластера;
-												// надо ли игнорировать source base;
+	rrchain_t *rrchain,	// С†РµРїРѕС‡РєР°
+	int seclen,						// РґР»РёРЅР° СЃРµРєС‚РѕСЂР°; == 0 - РјР°РєСЃ. РґР»РёРЅР° РІ rchain'Рµ
+	const char *infile,		// РёРјСЏ РІС…РѕРґРЅРѕРіРѕ С„Р°Р№Р»Р° (NULL - РґР»СЏ СЃРїРµС†.СЃР»СѓС‡Р°РµРІ)
+	const char *outfile,	// РёРјСЏ РІС‹С…РѕРґРЅРѕРіРѕ С„Р°Р№Р»Р° (NULL, РµСЃР»Рё РІС‹С…. С„Р°Р№Р» РЅРµ РЅСѓР¶РµРЅ)
+	int filelen,	// РґР»РёРЅР° С„Р°Р№Р»Р° (РґР»СЏ РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёСЏ РёР· XCD) РёР»Рё -1 - РЅРµ С‚СЂРѕРіР°С‚СЊ
+	time_t filetime,	// РІСЂРµРјСЏ РјРѕРґРёС„РёРєР°С†РёРё
+int need_flags ) {	// РЅР°РґРѕ Р»Рё РІС‹СЂР°РІРЅРёРІР°С‚СЊ С„Р°Р№Р» С…РІРѕСЃС‚РѕРј РїРѕ РіСЂР°РЅРёС†Рµ РєР»Р°СЃС‚РµСЂР°;
+												// РЅР°РґРѕ Р»Рё РёРіРЅРѕСЂРёСЂРѕРІР°С‚СЊ source base;
 
 	int pad_blks, jy;
 	int rc;
 	riffhdr_t riffbuf;
 	rrmap_t sector;
 	char fullsrcbuf[ _MAX_PATH * 2 ], infile_xcd[ _MAX_PATH ];
+	// РёРјРµРЅР° С†РµР»Рё: РЅР° РЅРёС… СЃСЃС‹Р»Р°РµС‚СЃСЏ file->full_out_name РґРѕ РєРѕРїРёСЂРѕРІР°РЅРёСЏ РІ COPY_NAME,
+	// РїРѕСЌС‚РѕРјСѓ РѕРЅРё РґРѕР»Р¶РЅС‹ Р¶РёС‚СЊ РґРѕ РєРѕРЅС†Р° С„СѓРЅРєС†РёРё, Р° РЅРµ С‚РѕР»СЊРєРѕ РІРЅСѓС‚СЂРё if ( outfile )
+	char native_tgt[ _MAX_PATH * 2 ], xcd_tgt[ _MAX_PATH * 2 ];
 #ifdef RR_KEEP_OLD_EXT
 	char infile_xcd2[ _MAX_PATH ];
 #endif /* RR_KEEP_OLD_EXT */
 	const char *fullsrc;
 	int in_is_xcd;
 	int in_handle, out_handle;
-	char printf_msg[ _MAX_PATH + 0x400 ];
+	char printf_msg[ RRF_MSG_LEN ];
 	rritem_t local_file, *file = &local_file;
 	int rr_filesize;
-	int fmode;
+	int fmode = -1;	// РїСЂР°РІР° РёСЃС…РѕРґРЅРѕРіРѕ С„Р°Р№Р»Р°; -1, РµСЃР»Рё РѕРЅ РЅРµ РѕС‚РєСЂС‹РІР°Р»СЃСЏ
 #ifndef RR_PERSISTENT_NAMES
 	const char *dyn_tname;
 #endif /* RR_PERSISTENT_NAMES */
@@ -805,7 +812,7 @@ int need_flags ) {	// надо ли выравнивать файл хвостом по границе кластера;
 		file->in_name = file->native_name = NULL;
 		in_is_xcd = 0;
 	} else {
-		long len; char *t_base;
+		off_t len; char *t_base;
 //		int in_is_xcd;
 		struct _stat l_stat;
 
@@ -832,8 +839,8 @@ int need_flags ) {	// надо ли выравнивать файл хвостом по границе кластера;
 /* ------------------------- */
 		if (_stat( fullsrc, &l_stat ) != 0 ) {
 			rc = errno;
-			if ( rc == ENOENT ) {	// нема файла
-				if ( ( in_is_xcd == 0 ) && ( seclen == XCD_DATA_LEN ) ) {	// не берётся - поищем XCD-файл
+			if ( rc == ENOENT ) {	// РЅРµРјР° С„Р°Р№Р»Р°
+				if ( ( in_is_xcd == 0 ) && ( seclen == XCD_DATA_LEN ) ) {	// РЅРµ Р±РµСЂС‘С‚СЃСЏ - РїРѕРёС‰РµРј XCD-С„Р°Р№Р»
 #ifdef RR_UPDATE_DIR
 					if ( t_base != rrchain->upd_base )
 #endif /* RR_UPDATE_DIR */
@@ -843,7 +850,7 @@ int need_flags ) {	// надо ли выравнивать файл хвостом по границе кластера;
 #else /* RR_KEEP_OLD_EXT */
 					rr_printmsg( VERBOSE_INFO, "source file %s not found -\n  trying %s...\n",
 						infile, infile_xcd2 );
-					infile = infile_xcd2;	// пробуем "name.ext.xcd"
+					infile = infile_xcd2;	// РїСЂРѕР±СѓРµРј "name.ext.xcd"
 					GEN_FULL_NAME( 0 );
 					if (_stat( fullsrc, &l_stat ) == 0 )
 						goto found;
@@ -884,7 +891,7 @@ int need_flags ) {	// надо ли выравнивать файл хвостом по границе кластера;
 /* ------------------------- */
 #ifdef RR_EMPTY_DELD
 	#ifndef RR_UPDATE_DIR
-		#error "RR_EMPTY_DELD не работает без RR_UPDATE_DIR"
+		#error "RR_EMPTY_DELD РЅРµ СЂР°Р±РѕС‚Р°РµС‚ Р±РµР· RR_UPDATE_DIR"
 	#endif /* RR_UPDATE_DIR */
 		if ( ( l_stat.st_size == 0 ) && ( t_base == rrchain->upd_base ) ) {
 			sprintf( printf_msg,
@@ -904,7 +911,7 @@ int need_flags ) {	// надо ли выравнивать файл хвостом по границе кластера;
 		if ( in_handle == -1 ) {
 		recover:
 #ifdef RR_UPDATE_DIR
-			if ( t_base == rrchain->upd_base ) {	// с update-dir номер не прошёл
+			if ( t_base == rrchain->upd_base ) {	// СЃ update-dir РЅРѕРјРµСЂ РЅРµ РїСЂРѕС€С‘Р»
 				rr_printmsg( VERBOSE_INFO, "%s; trying file from source dir\n",
 					printf_msg );
 				goto upd_abort;
@@ -916,10 +923,10 @@ int need_flags ) {	// надо ли выравнивать файл хвостом по границе кластера;
 #ifdef RR_RECOVER_DELETED
 //			if ( rc == ENOENT ) {
 //			}
-			if ( ( rrchain->err_limit > 0 )	// в принципе можно восстанавливать
-				&& ( filelen > 0 ) && ( filetime > 0 )	// ура, есть данные о файле
+			if ( ( rrchain->err_limit > 0 )	// РІ РїСЂРёРЅС†РёРїРµ РјРѕР¶РЅРѕ РІРѕСЃСЃС‚Р°РЅР°РІР»РёРІР°С‚СЊ
+				&& ( filelen > 0 ) && ( filetime > 0 )	// СѓСЂР°, РµСЃС‚СЊ РґР°РЅРЅС‹Рµ Рѕ С„Р°Р№Р»Рµ
 #ifdef RR_ONLY_IF_NEED_RESTORE
-				&& ( outfile != NULL )	// восстанавливать таки надо
+				&& ( outfile != NULL )	// РІРѕСЃСЃС‚Р°РЅР°РІР»РёРІР°С‚СЊ С‚Р°РєРё РЅР°РґРѕ
 #endif /* RR_ONLY_IF_NEED_RESTORE */
 				) {
 //				infile = file->native_name;
@@ -944,7 +951,7 @@ int need_flags ) {	// надо ли выравнивать файл хвостом по границе кластера;
 					goto cont;
 				}
 #ifdef RR_OPEN_NONPROTECTED
-			} else if ( need_flags & NO_RRPROCESS ) {	// даже если нету - ничего страшного
+			} else if ( need_flags & NO_RRPROCESS ) {	// РґР°Р¶Рµ РµСЃР»Рё РЅРµС‚Сѓ - РЅРёС‡РµРіРѕ СЃС‚СЂР°С€РЅРѕРіРѕ
 				DUMMY_FILE_PARAMS;
 				rr_printmsg( VERBOSE_INFO, "%s; ignored\n",
 					printf_msg );
@@ -961,8 +968,13 @@ int need_flags ) {	// надо ли выравнивать файл хвостом по границе кластера;
 			goto err2;
 		}
 	no_open:
+		if ( l_stat.st_size > INT_MAX ) {	// РґР»РёРЅС‹ РІ rr-list'Рµ Рё РІ С†РµРїРѕС‡РєРµ - int
+			rr_printmsg( VERBOSE_QUIET, "source file %s: too large (%lld bytes)\n",
+				fullsrc, (long long) l_stat.st_size );
+			goto err3;
+		}
 		file->len_bytes = ( len = l_stat.st_size );
-		if ( len < RIFF_LEN ) {	// слишком короткий для XCD
+		if ( len < RIFF_LEN ) {	// СЃР»РёС€РєРѕРј РєРѕСЂРѕС‚РєРёР№ РґР»СЏ XCD
 			exactfiletype = 1;
 			goto not_xcd;
 		}
@@ -978,7 +990,7 @@ int need_flags ) {	// надо ли выравнивать файл хвостом по границе кластера;
 				"source file %s: initial read failed: %d - %s\n",
 				fullsrc, rc, strerror( rc ) );
 //			goto err3;
-// начинаем эвристический анализ:
+// РЅР°С‡РёРЅР°РµРј СЌРІСЂРёСЃС‚РёС‡РµСЃРєРёР№ Р°РЅР°Р»РёР·:
 #else /* RR_UPDATE_DIR */
 			rr_printmsg( VERBOSE_INFO,
 				RR_FILETYPE_MSG( " file %s: initial read failed: %d - %s\n" ),
@@ -1024,9 +1036,9 @@ int need_flags ) {	// надо ли выравнивать файл хвостом по границе кластера;
 		}
 #ifndef RR_VCD_AS_ISO
 	#ifdef RR_NO_INIT_READ
-		#error "Нельзя RR_NO_INIT_READ без RR_VCD_AS_ISO"
+		#error "РќРµР»СЊР·СЏ RR_NO_INIT_READ Р±РµР· RR_VCD_AS_ISO"
 	#endif /* RR_NO_INIT_READ */
-// блокируем обработку ISO как XCD:
+// Р±Р»РѕРєРёСЂСѓРµРј РѕР±СЂР°Р±РѕС‚РєСѓ ISO РєР°Рє XCD:
 		if ( in_is_xcd && ( seclen < XCD_DATA_LEN ) ) {
 			rr_printmsg( VERBOSE_QUIET,
 				RR_FILETYPE_MSG( " file %s: cannot process XCD file as ISO\n" ),
@@ -1045,7 +1057,7 @@ int need_flags ) {	// надо ли выравнивать файл хвостом по границе кластера;
 		}
 		file->len_blks = ( len - pos + file->in_blklen - 1 ) / file->in_blklen;
 		file->in_skip_bytes = pos;
-// запомним и проверим длину/время
+// Р·Р°РїРѕРјРЅРёРј Рё РїСЂРѕРІРµСЂРёРј РґР»РёРЅСѓ/РІСЂРµРјСЏ
 		if ( filelen != -1 ) {
 			if ( in_is_xcd ?
 				( ( ( filelen + seclen - 1 ) / seclen ) != file->len_blks ) :
@@ -1059,7 +1071,7 @@ int need_flags ) {	// надо ли выравнивать файл хвостом по границе кластера;
 				goto recover;
 #else /* RR_RECOVER_DELETED */
 #ifdef RR_UPDATE_DIR
-	#error "RR_UPDATE_DIR без RR_RECOVER_DELETED не работает!"
+	#error "RR_UPDATE_DIR Р±РµР· RR_RECOVER_DELETED РЅРµ СЂР°Р±РѕС‚Р°РµС‚!"
 #endif /* RR_UPDATE_DIR */
 				rr_printmsg( VERBOSE_QUIET,
 					"source file %s: given and real sizes don't match\n", fullsrc );
@@ -1075,7 +1087,7 @@ int need_flags ) {	// надо ли выравнивать файл хвостом по границе кластера;
 
 //		file->pos_bytes = -1;
 // quick hack:
-//		if ( ( errcount > 0 ) && ( jx == ( fcount - 1 ) ) ) {	// последний: ремонтный - м.б. не сначала
+//		if ( ( errcount > 0 ) && ( jx == ( fcount - 1 ) ) ) {	// РїРѕСЃР»РµРґРЅРёР№: СЂРµРјРѕРЅС‚РЅС‹Р№ - Рј.Р±. РЅРµ СЃРЅР°С‡Р°Р»Р°
 //			file->skip_bytes += ( file->len_blks - errcount ) * file->blklen;
 //			file->len_blks = errcount;
 //		}
@@ -1105,10 +1117,7 @@ int need_flags ) {	// надо ли выравнивать файл хвостом по границе кластера;
 			sector.type = DUMMY;
 	}
 	if ( outfile != NULL ) {
-		char
-		native_tgt[ _MAX_PATH * 2 ],
-		xcd_tgt[ _MAX_PATH * 2 ],
-		*fulltgt = native_tgt;
+		char *fulltgt = native_tgt;
 		int out_is_xcd, out_need_xcd;
 
 // 		_makepath( fulltgt, NULL, rrchain->tgt_base, outfile, NULL );
@@ -1126,7 +1135,7 @@ int need_flags ) {	// надо ли выравнивать файл хвостом по границе кластера;
 
 		if ( out_is_xcd ) {
 			int filelen = XCD_START + file->len_blks * XCD_LEN;
-// блокируем обработку ISO как XCD:
+// Р±Р»РѕРєРёСЂСѓРµРј РѕР±СЂР°Р±РѕС‚РєСѓ ISO РєР°Рє XCD:
 			if ( seclen < XCD_DATA_LEN ) {
 				rr_printmsg( VERBOSE_QUIET,
 					"target file %s: cannot process ISO file as XCD\n", fulltgt );
@@ -1134,7 +1143,7 @@ int need_flags ) {	// надо ли выравнивать файл хвостом по границе кластера;
 			}
 			need_flags |= XCD_OUTPUT;
 //			if ( /* !exactfiletype || */ ( !in_is_xcd
-//				/* file->blklen != XCD_LEN */ ) ) {	// кодируем в XCD
+//				/* file->blklen != XCD_LEN */ ) ) {	// РєРѕРґРёСЂСѓРµРј РІ XCD
 /*					printf( "source file %s, target file %s: "
 					"encoding to XCD is not supported yet!\n",
 					file->name, file->out_name );
@@ -1151,7 +1160,7 @@ int need_flags ) {	// надо ли выравнивать файл хвостом по границе кластера;
 			file->out_skip_bytes = 0;
 //			file->out_skip_per_blk = 0;
 		}
-// создать каталог:
+// СЃРѕР·РґР°С‚СЊ РєР°С‚Р°Р»РѕРі:
 		if ( rr_makedestdir( fulltgt ) != 0 ) {
 			rr_printmsg( VERBOSE_QUIET,
 				"target file %s: error creating dir\n", fulltgt );
@@ -1175,7 +1184,7 @@ int need_flags ) {	// надо ли выравнивать файл хвостом по границе кластера;
 				goto err4;
 			}
 		}
-// %%% здесь можно сделать копирование skip'нутой части ремонтного файла
+// %%% Р·РґРµСЃСЊ РјРѕР¶РЅРѕ СЃРґРµР»Р°С‚СЊ РєРѕРїРёСЂРѕРІР°РЅРёРµ skip'РЅСѓС‚РѕР№ С‡Р°СЃС‚Рё СЂРµРјРѕРЅС‚РЅРѕРіРѕ С„Р°Р№Р»Р°
 	} else {
 		/*file->*/out_handle = -1;
 		file->out_name = NULL;
@@ -1187,8 +1196,8 @@ int need_flags ) {	// надо ли выравнивать файл хвостом по границе кластера;
 //	sector.type = UNTOUCHED;
 
 #ifdef RR_TRACK_PATH
-	#error "выделять компоненту пути, хранить только имя и указатель на путь "
-	#error "(путь хранить, только если обновлён), следить за вложенностью и повторами"
+	#error "РІС‹РґРµР»СЏС‚СЊ РєРѕРјРїРѕРЅРµРЅС‚Сѓ РїСѓС‚Рё, С…СЂР°РЅРёС‚СЊ С‚РѕР»СЊРєРѕ РёРјСЏ Рё СѓРєР°Р·Р°С‚РµР»СЊ РЅР° РїСѓС‚СЊ "
+	#error "(РїСѓС‚СЊ С…СЂР°РЅРёС‚СЊ, С‚РѕР»СЊРєРѕ РµСЃР»Рё РѕР±РЅРѕРІР»С‘РЅ), СЃР»РµРґРёС‚СЊ Р·Р° РІР»РѕР¶РµРЅРЅРѕСЃС‚СЊСЋ Рё РїРѕРІС‚РѕСЂР°РјРё"
 #endif /* RR_TRACK_PATH */
 	rr_filesize = sizeof( rritem_t )
 #ifdef RR_STORE_EDC
@@ -1202,7 +1211,7 @@ int need_flags ) {	// надо ли выравнивать файл хвостом по границе кластера;
 		+ ( ( file->full_out_name == NULL ) ? 0 : strlen( file->full_out_name ) + 1 )
 #endif /* RR_PERSISTENT_NAMES */
 		;
-// выделяем память, копируем...
+// РІС‹РґРµР»СЏРµРј РїР°РјСЏС‚СЊ, РєРѕРїРёСЂСѓРµРј...
 	if ( ( file = malloc( rr_filesize ) ) == NULL ) {
 		rr_printmsg( VERBOSE_QUIET,
 			"RR-chain %s: not enough memory to get %d bytes for next file\n",
@@ -1233,7 +1242,7 @@ int need_flags ) {	// надо ли выравнивать файл хвостом по границе кластера;
 			} \
 		} while (0)
 #else /* RR_PERSISTENT_NAMES */
-#error "Посмотреть, как хранятся имена"
+#error "РџРѕСЃРјРѕС‚СЂРµС‚СЊ, РєР°Рє С…СЂР°РЅСЏС‚СЃСЏ РёРјРµРЅР°"
 	#define COPY_NAME( name ) \
 		do { \
 			file->name = local_file.name; \
@@ -1255,10 +1264,10 @@ int need_flags ) {	// надо ли выравнивать файл хвостом по границе кластера;
 	rrchain->total_blks += pad_blks + file->len_blks;
 
 	for ( jy = file->blk_from; jy < rrchain->total_blks; jy++ ) {
-		rrchain->blk_map[ jy ].sector = sector.sector;
+		rrchain->blk_map[ jy ] = sector;
 	}
 //	file->out_len_bytes = ( file->out_blklen == XCD_LEN ) ? -1 : outlen;
-// Утрясём длину и дату/время файла:
+// РЈС‚СЂСЏСЃС‘Рј РґР»РёРЅСѓ Рё РґР°С‚Сѓ/РІСЂРµРјСЏ С„Р°Р№Р»Р°:
 //	file->filetime = filetime;
 //	file->filelen = filelen;
 	if ( out_handle != -1 )
@@ -1302,22 +1311,22 @@ static void rr_shape_outfile( rritem_t *file, int *rc, int settime ) {
 	int need_setsize =
 		( file->out_blks == file->len_blks ) &&
 		( file->filesize != -1 ) && ( file->out_blklen != XCD_LEN );
-	if ( ( ( need_setsize )	// размер
-			|| ( settime && ( (int) file->filetime != -1 ) ) ) ) {	// время
+	if ( ( ( need_setsize )	// СЂР°Р·РјРµСЂ
+			|| ( settime && ( file->filetime != (time_t) -1 ) ) ) ) {	// РІСЂРµРјСЏ
 		int out_handle;
-		char outbuf[ _MAX_PATH + 0x400 ];
+		char outbuf[ RRF_MSG_LEN ];
 		if ( ( ( out_handle = rrf_open( file->full_out_name, _O_RDWR,
-							file->need_flags, "target", outbuf, NULL, NULL ) ) == -1 ) ) {	// не открылся
+							file->need_flags, "target", outbuf, NULL, NULL ) ) == -1 ) ) {	// РЅРµ РѕС‚РєСЂС‹Р»СЃСЏ
 //					has_error = 1; discard = 1;
 			rr_printmsg( VERBOSE_NORMAL, "%s\n"
-				" - resize/settime cannot be performed\n", outbuf );	// сообщить
+				" - resize/settime cannot be performed\n", outbuf );	// СЃРѕРѕР±С‰РёС‚СЊ
 //					goto error;
 		} else {
 			if ( need_setsize ) {
 				rr_errmsg( rc, file, _chsize( /*file->*/out_handle, file->filesize ),
 					"resize" );
 			}
-			if ( settime && ( (int) file->filetime != -1 ) &&
+			if ( settime && ( file->filetime != (time_t) -1 ) &&
 				( file->out_blks == file->len_blks ) ) {
 				int iret;
 #ifdef __WIN32__
@@ -1329,7 +1338,7 @@ static void rr_shape_outfile( rritem_t *file, int *rc, int settime ) {
 				//ftime[0] specifies the new access time,
 				//ftime[1] specifies the new modification time.
 				struct timeval ftime[2];
-				time( &ftime[0].tv_sec);// ??? зачем такие сложности? //так в Glibc
+				time( &ftime[0].tv_sec);// ??? Р·Р°С‡РµРј С‚Р°РєРёРµ СЃР»РѕР¶РЅРѕСЃС‚Рё? //С‚Р°Рє РІ Glibc
 				ftime[0].tv_usec = 0L;
 				ftime[1].tv_sec =  file->filetime;
 				ftime[1].tv_usec = 0L;
@@ -1346,7 +1355,7 @@ static void rr_shape_outfile( rritem_t *file, int *rc, int settime ) {
 	}
 }
 static int rr_bad_count( rrchain_t *rrchain, int blk_from, int blk_to ) {
-	// считаем нескопированные блоки в диапазоне от-до
+	// СЃС‡РёС‚Р°РµРј РЅРµСЃРєРѕРїРёСЂРѕРІР°РЅРЅС‹Рµ Р±Р»РѕРєРё РІ РґРёР°РїР°Р·РѕРЅРµ РѕС‚-РґРѕ
 	int count;
 	for ( count = 0; blk_from < blk_to; blk_from++ ) {
 		if ( !( rrchain->blk_map[ blk_from ].type & COPIED ) )
@@ -1363,14 +1372,14 @@ static int rr_finish( rrchain_t *rrchain, int discard ) {
 //error:
 list_for_each( jp, &rrchain->items_list ) {
 	rritem_t *file = list_entry( jp, rritem_t, list_item );
-	if ( file->write_allow /*full_out_name[ 0 ] != '\0'*/ ) {	// есть выходной файл
+	if ( file->write_allow /*full_out_name[ 0 ] != '\0'*/ ) {	// РµСЃС‚СЊ РІС‹С…РѕРґРЅРѕР№ С„Р°Р№Р»
 		if ( discard ) {
 			unlink( file->full_out_name );
-		} else {	// закрытие; переименовывает недовосстановленные файлы
+		} else {	// Р·Р°РєСЂС‹С‚РёРµ; РїРµСЂРµРёРјРµРЅРѕРІС‹РІР°РµС‚ РЅРµРґРѕРІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРЅС‹Рµ С„Р°Р№Р»С‹
 			rr_shape_outfile( file, &rc, 1 );
 			if ( rr_bad_count( rrchain, file->blk_from,
-					file->len_blks + file->blk_from - 1 ) ) {	// файл битый
-				char bad_name[ _MAX_PATH + 4 ];							// переименовываем
+					file->len_blks + file->blk_from - 1 ) ) {	// С„Р°Р№Р» Р±РёС‚С‹Р№
+				char bad_name[ _MAX_PATH + 4 ];							// РїРµСЂРµРёРјРµРЅРѕРІС‹РІР°РµРј
 				strcpy( bad_name, file->full_out_name );
 				strcat( bad_name, ".bad" );
 				rename( file->full_out_name, bad_name );
@@ -1439,7 +1448,7 @@ if ( files_lost > 0 )
 		files_lost, blks_lost, bytes_lost );
 }
 
-__inline unsigned int rr_edc( const rrblock_t *block ) {
+static __inline unsigned int rr_edc( const rrblock_t *block ) {
 	return build_edc( block->subheader, 0, XCD_SUBHDR_LEN + XCD_DATA_LEN );
 }
 
@@ -1451,26 +1460,26 @@ __inline unsigned int rr_edc( const rrblock_t *block ) {
 		blk->edc = 0x55555555; \
 	} while (0)
 
-static int rr_enblock(	// распихивает содержимое входного буфера по XCD-блокам
+static int rr_enblock(	// СЂР°СЃРїРёС…РёРІР°РµС‚ СЃРѕРґРµСЂР¶РёРјРѕРµ РІС…РѕРґРЅРѕРіРѕ Р±СѓС„РµСЂР° РїРѕ XCD-Р±Р»РѕРєР°Рј
 rrblock_t *out, const char *in, int blklen, int count ) {
 	int jx;
 	if ( in != NULL ) for ( jx = 0; jx < count; jx++, out++, in += blklen ) {
-			int taillen = XCD_DATA_LEN - blklen;	// хвост блока (заполняем нулями)
+			int taillen = XCD_DATA_LEN - blklen;	// С…РІРѕСЃС‚ Р±Р»РѕРєР° (Р·Р°РїРѕР»РЅСЏРµРј РЅСѓР»СЏРјРё)
 			memcpy( out->sync, XCD_SYNC_FIELD, XCD_SYNC_LEN );
 			memset( out->header, 0, XCD_HDR_LEN + XCD_SUBHDR_LEN );
 			memcpy( out->data, in, blklen );
 			if ( taillen > 0 )
 				memset( out->data + blklen, 0, taillen );
 			out->edc = rr_edc( out );
-		} else for ( jx = 0; jx < count; jx++, out++ ) {	// фиктивный блок
+		} else for ( jx = 0; jx < count; jx++, out++ ) {	// С„РёРєС‚РёРІРЅС‹Р№ Р±Р»РѕРє
 		MAKE_DUMMY_BLOCK( out );
 	}
 	return ( count );
 }
 /*__inline*/ static int rr_goodscan(	// return: count of good blocks or < 0 if none good
 	const char *buf,
-	int datalen,				// длина полезной части
-	int blklen,					// полная длина блока (шаг)
+	int datalen,				// РґР»РёРЅР° РїРѕР»РµР·РЅРѕР№ С‡Р°СЃС‚Рё
+	int blklen,					// РїРѕР»РЅР°СЏ РґР»РёРЅР° Р±Р»РѕРєР° (С€Р°Рі)
 int count ) {
 	int jx, jy;
 	for ( jx = 0; jx < count; jx++, buf += blklen ) {
@@ -1489,7 +1498,7 @@ int count ) {
 }
 static int rr_deblock(	// return: count of good blocks or < 0 if none good
 	char *out,
-	const rrblock_t *in,
+	rrblock_t *in,	// Р±РёС‚С‹Рµ Р±Р»РѕРєРё Р·Р°С‚РёСЂР°СЋС‚СЃСЏ (MAKE_DUMMY_BLOCK)
 	int blklen,
 	int count
 		/*, int *errcount*/ ) {
@@ -1498,7 +1507,7 @@ static int rr_deblock(	// return: count of good blocks or < 0 if none good
 //		memcpy( out, in->data, blklen );
 		if ( ( memcmp( in->sync, XCD_SYNC_FIELD, XCD_SYNC_LEN ) != 0 ) ||
 			( in->edc != rr_edc( in ) ) ) {
-			MAKE_DUMMY_BLOCK( in );	// НЕ СОХРАНЯТЬ!!! битый пакет в копию
+			MAKE_DUMMY_BLOCK( in );	// РќР• РЎРћРҐР РђРќРЇРўР¬!!! Р±РёС‚С‹Р№ РїР°РєРµС‚ РІ РєРѕРїРёСЋ
 			memcpy( out, in->data, blklen );
 			rc = SOFT_ERROR;
 			break;
@@ -1506,45 +1515,45 @@ static int rr_deblock(	// return: count of good blocks or < 0 if none good
 		}
 		memcpy( out, in->data, blklen );
 	}
-	if ( ( rc < 0 ) && ( jx == 0 ) )	// первый же сектор - дохлый
+	if ( ( rc < 0 ) && ( jx == 0 ) )	// РїРµСЂРІС‹Р№ Р¶Рµ СЃРµРєС‚РѕСЂ - РґРѕС…Р»С‹Р№
 		jx = rc;
 	return ( jx );
 }
-static int rr_makecopy(	// записывает содержимое буфера в файл-копию
+static int rr_makecopy(	// Р·Р°РїРёСЃС‹РІР°РµС‚ СЃРѕРґРµСЂР¶РёРјРѕРµ Р±СѓС„РµСЂР° РІ С„Р°Р№Р»-РєРѕРїРёСЋ
 	rrchain_t *rrchain,
 	rrmap_t rfnum,
-	int fileblk,	// только для справки (вывод в лог)
+	int fileblk,	// С‚РѕР»СЊРєРѕ РґР»СЏ СЃРїСЂР°РІРєРё (РІС‹РІРѕРґ РІ Р»РѕРі)
 	int blks,
-	const char *buf,		// или NULL, если надо сделать специально сбойный блок
-	const rrmap_t *map,	// или NULL, если надо записать исправления
+	const char *buf,		// РёР»Рё NULL, РµСЃР»Рё РЅР°РґРѕ СЃРґРµР»Р°С‚СЊ СЃРїРµС†РёР°Р»СЊРЅРѕ СЃР±РѕР№РЅС‹Р№ Р±Р»РѕРє
+	const rrmap_t *map,	// РёР»Рё NULL, РµСЃР»Рё РЅР°РґРѕ Р·Р°РїРёСЃР°С‚СЊ РёСЃРїСЂР°РІР»РµРЅРёСЏ
 int *error ) {
 	rritem_t *file = rfnum.rritem;
 	int rc = NO_ERROR;
-	char *tbuf = NULL;	// %%% для поиска глюки
+	char *tbuf = NULL;	// %%% РґР»СЏ РїРѕРёСЃРєР° РіР»СЋРєРё
 	int tblklen, tblks = blks;
 	int out_handle = rrchain->active_out_handle;
 //		blklen = file->native_blklen;
-	if ( /*file->*/out_handle == -1 )	// файла-копии нет - можно не писать
+	if ( /*file->*/out_handle == -1 )	// С„Р°Р№Р»Р°-РєРѕРїРёРё РЅРµС‚ - РјРѕР¶РЅРѕ РЅРµ РїРёСЃР°С‚СЊ
 		return ( blks );
 	if ( file->out_blklen == XCD_LEN  ) {
 		tblklen = XCD_LEN; tblks = XCD_BUFBLKS; tbuf = rrchain->xcd_buf;
 //		if ( tblks > blks )
 //			tblks = blks;
-		if ( buf == NULL ) {	// генерируем пустышку
+		if ( buf == NULL ) {	// РіРµРЅРµСЂРёСЂСѓРµРј РїСѓСЃС‚С‹С€РєСѓ
 			rr_enblock( (rrblock_t *) tbuf, NULL, rrchain->max_blklen, tblks );
 		}
-	} else {	// для не-XCD-файлов
+	} else {	// РґР»СЏ РЅРµ-XCD-С„Р°Р№Р»РѕРІ
 //		tlen = blklen;
-		if ( buf == NULL ) {	// генерируем пустышку
+		if ( buf == NULL ) {	// РіРµРЅРµСЂРёСЂСѓРµРј РїСѓСЃС‚С‹С€РєСѓ
 			tbuf = rrchain->xcd_buf;
 			tblks = ( XCD_BUFBLKS * XCD_LEN ) / file->native_blklen;
 //			if ( tblks > blks )
 //				tblks = blks;
 			tblklen = file->native_blklen;
 			memset( tbuf, 0, tblks * tblklen );
-		} else if ( file->native_blklen == rrchain->max_blklen ) {	// ура, можно писать всё сразу
+		} else if ( file->native_blklen == rrchain->max_blklen ) {	// СѓСЂР°, РјРѕР¶РЅРѕ РїРёСЃР°С‚СЊ РІСЃС‘ СЃСЂР°Р·Сѓ
 			tblklen = file->native_blklen;
-		} else {	// через xcd_buf
+		} else {	// С‡РµСЂРµР· xcd_buf
 			tbuf = rrchain->xcd_buf;
 			tblks = ( XCD_BUFBLKS * XCD_LEN ) / file->native_blklen;
 			tblklen = file->native_blklen;
@@ -1552,15 +1561,15 @@ int *error ) {
 		}
 	}
 
-	while ( blks > 0 ) {	// собственно пишем файл
+	while ( blks > 0 ) {	// СЃРѕР±СЃС‚РІРµРЅРЅРѕ РїРёС€РµРј С„Р°Р№Р»
 		int wr_len;
 		if ( tblks > blks )
 			tblks = blks;
-		if ( buf == NULL ) {	// tbuf - пустышка, tblklen - длина ейного блока, tblks - кол-во
+		if ( buf == NULL ) {	// tbuf - РїСѓСЃС‚С‹С€РєР°, tblklen - РґР»РёРЅР° РµР№РЅРѕРіРѕ Р±Р»РѕРєР°, tblks - РєРѕР»-РІРѕ
 		} else {
 			if ( file->out_blklen == XCD_LEN ) {
-//#error "Копировать из buf при rr_write"
-				if ( file->in_blklen != XCD_LEN ) {	// надо собирать в блок
+//#error "РљРѕРїРёСЂРѕРІР°С‚СЊ РёР· buf РїСЂРё rr_write"
+				if ( file->in_blklen != XCD_LEN ) {	// РЅР°РґРѕ СЃРѕР±РёСЂР°С‚СЊ РІ Р±Р»РѕРє
 					rr_enblock( (rrblock_t *) rrchain->xcd_buf, buf,
 						rrchain->max_blklen, tblks );
 					if ( map != NULL ) {
@@ -1572,11 +1581,11 @@ int *error ) {
 	//					map = NULL;
 						map += tblks;
 					}
-				} else if ( map == NULL ) {	// XCD->XCD, запись исправлений
+				} else if ( map == NULL ) {	// XCD->XCD, Р·Р°РїРёСЃСЊ РёСЃРїСЂР°РІР»РµРЅРёР№
 					rr_enblock( (rrblock_t *) rrchain->xcd_buf, buf,
 						rrchain->max_blklen, tblks );
 				}
-			} else if ( file->native_blklen != rrchain->max_blklen ) {	// через xcd_buf
+			} else if ( file->native_blklen != rrchain->max_blklen ) {	// С‡РµСЂРµР· xcd_buf
 				const char *buf2 = buf;
 				char *tbuf2 = tbuf;
 				int jx;
@@ -1620,11 +1629,11 @@ int *error ) {
 				tblk * file->out_blklen + file->out_skip_bytes, SEEK_SET ) == -1L ) {
 			if ( error != NULL ) *error = errno;
 			rr_printmsg( VERBOSE_QUIET | CLEAR_LINE,
-				"%s file %s, sector %d: error seeking: %d - %s\n", "target",	// для экономичности
+				"%s file %s, sector %d: error seeking: %d - %s\n", "target",	// РґР»СЏ СЌРєРѕРЅРѕРјРёС‡РЅРѕСЃС‚Рё
 				file->out_name, fileblk, *error, strerror( *error ) );
 			return ( FATAL_ERROR );
 		}
-		if ( tblk < fileblk ) {	// заполним нулями
+		if ( tblk < fileblk ) {	// Р·Р°РїРѕР»РЅРёРј РЅСѓР»СЏРјРё
 			int jx = rr_makecopy( rrchain, rfnum, tblk, fileblk - tblk, NULL,
 					rrchain->blk_map + file->blk_from + tblk, error );
 			if ( jx < NO_ERROR )
@@ -1694,7 +1703,7 @@ int rr_read( rrchain_t *rrchain, char *buf, int blks, int *errcount
 ) {
 	rrmap_t rfnum;				// real filenum
 	int
-	fileblk;			// номер начального блока в файле
+	fileblk;			// РЅРѕРјРµСЂ РЅР°С‡Р°Р»СЊРЅРѕРіРѕ Р±Р»РѕРєР° РІ С„Р°Р№Р»Рµ
 	int len, len2;
 	int total_blks_read/*, file_blks_read = 0*/;
 	int error = 0;
@@ -1707,7 +1716,7 @@ int rr_read( rrchain_t *rrchain, char *buf, int blks, int *errcount
 		( ( rrchain->read_blks > 1 ) ?
 			(	DECOY_BLK | FATAL | NOTREADABLE | MISSING | BAD | SHADY | DUMMY ) :
 			(	DECOY_BLK | FATAL | NOTREADABLE | MISSING | BAD | DUMMY ) );
-//	char printf_msg[ _MAX_PATH + 0x400 ];
+//	char printf_msg[ RRF_MSG_LEN ];
 #ifdef RR_NEW_ENC
 	if ( rrchain->blk_map == NULL )
 
@@ -1722,21 +1731,21 @@ int rr_read( rrchain_t *rrchain, char *buf, int blks, int *errcount
 		error = EINVAL; rc = FATAL_ERROR;
 		goto err2;
 	}
-	if ( ( blks == 0 )	// ничего не заказано
-		|| ( rrchain->pos_blks >= rrchain->total_blks ) )	// уже конец объекта
+	if ( ( blks == 0 )	// РЅРёС‡РµРіРѕ РЅРµ Р·Р°РєР°Р·Р°РЅРѕ
+		|| ( rrchain->pos_blks >= rrchain->total_blks ) )	// СѓР¶Рµ РєРѕРЅРµС† РѕР±СЉРµРєС‚Р°
 		return 0;
-	if ( rrchain->pos_blks + blks > rrchain->total_blks )	// слишком много заказано
+	if ( rrchain->pos_blks + blks > rrchain->total_blks )	// СЃР»РёС€РєРѕРј РјРЅРѕРіРѕ Р·Р°РєР°Р·Р°РЅРѕ
 		blks = rrchain->total_blks - rrchain->pos_blks;
 	for ( total_blks_read = 0; ( total_blks_read < blks ) && ( error == 0 );
 			/*total_blks_read += file_blks_read*/ ) {
 		int /*loops = 1,*/ pos;
 		int
 		jx,
-		fileblkcount,	// кол-во блоков для читать из конкретно этого файла
-		loopblkcount,	// кол-во блоков за один заход
-//			filenum,			// номер файла в объекте
+		fileblkcount,	// РєРѕР»-РІРѕ Р±Р»РѕРєРѕРІ РґР»СЏ С‡РёС‚Р°С‚СЊ РёР· РєРѕРЅРєСЂРµС‚РЅРѕ СЌС‚РѕРіРѕ С„Р°Р№Р»Р°
+		loopblkcount,	// РєРѕР»-РІРѕ Р±Р»РѕРєРѕРІ Р·Р° РѕРґРёРЅ Р·Р°С…РѕРґ
+//			filenum,			// РЅРѕРјРµСЂ С„Р°Р№Р»Р° РІ РѕР±СЉРµРєС‚Рµ
 		handle,
-		loop_blks_read;	// прочитано блоков за один вызов read
+		loop_blks_read;	// РїСЂРѕС‡РёС‚Р°РЅРѕ Р±Р»РѕРєРѕРІ Р·Р° РѕРґРёРЅ РІС‹Р·РѕРІ read
 		rritem_t *file = NULL;
 //		rrblock_t
 //			tmpbuf,
@@ -1750,7 +1759,7 @@ int rr_read( rrchain_t *rrchain, char *buf, int blks, int *errcount
 		for ( filenum = rrchain->total_files - 1; filenum >= 0; filenum-- ) {
 			if ( rrchain->files[ filenum ].blk_from <=
 					( rrchain->pos_blks + total_blks_read ) )
-				break;	// нужный номер - в filenum
+				break;	// РЅСѓР¶РЅС‹Р№ РЅРѕРјРµСЂ - РІ filenum
 		}
 */
 	retry:
@@ -1758,16 +1767,16 @@ int rr_read( rrchain_t *rrchain, char *buf, int blks, int *errcount
 // another quick hack:
 		if (  rfnum.type & dmask ) {			// dummy / bad / rough
 //dummy_file:
-			fileblkcount = MAX_BLKNUM;	// больше точно не понадобится
+			fileblkcount = MAX_BLKNUM;	// Р±РѕР»СЊС€Рµ С‚РѕС‡РЅРѕ РЅРµ РїРѕРЅР°РґРѕР±РёС‚СЃСЏ
 			dummy_flag = 1;
-		} else {	// реальный файл
+		} else {	// СЂРµР°Р»СЊРЅС‹Р№ С„Р°Р№Р»
 //			filenum = rfnum.rfile;
 			file = rfnum.rritem;
 			fileblk = ( rrchain->pos_blks + total_blks_read ) - file->blk_from;
 			if ( ( jx = rr_select( rrchain, file, &error ) ) < SOFT_ERROR ) {
 				rc = jx;
 				goto err1;
-			} else if ( jx < NO_ERROR )	// т.е. SOFT_ERROR => src-файл не удалось открыть
+			} else if ( jx < NO_ERROR )	// С‚.Рµ. SOFT_ERROR => src-С„Р°Р№Р» РЅРµ СѓРґР°Р»РѕСЃСЊ РѕС‚РєСЂС‹С‚СЊ
 				goto retry;
 			if ( file->need_flags & DECOY_ITEM ) {
 				decoy_flag = 1;
@@ -1775,13 +1784,13 @@ int rr_read( rrchain_t *rrchain, char *buf, int blks, int *errcount
 				decoy_ptr = file->decoy_buf + file->native_blklen * fileblk;
 			} else {
 				if ( ( rfnum.type & NOTCOPIED ) ||
-					( rrchain->active_out_handle == -1 ) ) {	// оригинальный
+					( rrchain->active_out_handle == -1 ) ) {	// РѕСЂРёРіРёРЅР°Р»СЊРЅС‹Р№
 					handle = rrchain->active_in_handle;
 					filename = file->full_in_name;
 					blklen = file->in_blklen;
 					len_blks = file->len_blks;
 					pos = fileblk * blklen + file->in_skip_bytes;
-				} else {	// уже прочитано - берём копию
+				} else {	// СѓР¶Рµ РїСЂРѕС‡РёС‚Р°РЅРѕ - Р±РµСЂС‘Рј РєРѕРїРёСЋ
 					handle = rrchain->active_out_handle;
 					filename = file->full_out_name;
 					blklen = file->out_blklen;
@@ -1830,9 +1839,9 @@ int rr_read( rrchain_t *rrchain, char *buf, int blks, int *errcount
 		if ( fileblkcount > jx )
 			fileblkcount = jx;
 /*
-		for ( jx = 0; jx < fileblkcount; jx++ ) {	// ищем конец блока
-			if ( rfnum.sector !=
-					rrchain->blk_map[ rrchain->pos_blks + total_blks_read + jx ].sector ) {
+		for ( jx = 0; jx < fileblkcount; jx++ ) {	// РёС‰РµРј РєРѕРЅРµС† Р±Р»РѕРєР°
+			if ( !RRMAP_EQ( rfnum,
+					rrchain->blk_map[ rrchain->pos_blks + total_blks_read + jx ] ) ) {
 				fileblkcount = jx;
 				break;
 			}
@@ -1859,7 +1868,7 @@ int rr_read( rrchain_t *rrchain, char *buf, int blks, int *errcount
 			continue;
 		}
 		loopblkcount = /*XCD_BUFBLKS*/ rrchain->read_blks;
-		if ( ( blklen == XCD_LEN )	// обрабатываемый файл - типа XCD
+		if ( ( blklen == XCD_LEN )	// РѕР±СЂР°Р±Р°С‚С‹РІР°РµРјС‹Р№ С„Р°Р№Р» - С‚РёРїР° XCD
 			|| ( file->native_blklen != rrchain->max_blklen ) ) {
 			readptr = rrchain->xcd_buf;
 #ifdef RR_OLD_BLOCK
@@ -1881,7 +1890,7 @@ int rr_read( rrchain_t *rrchain, char *buf, int blks, int *errcount
 			else
 #endif /* RR_FIN_WKARND */
 #endif /*0*/
-			if ( loopblkcount >= fileblkcount )
+			if ( loopblkcount >= fileblkcount ) {
 #ifdef RR_FIN_WKARND
 				if ( ( blklen == XCD_LEN ) &&
 					( loopblkcount >= ( file->len_blks - fileblk ) ) )
@@ -1889,6 +1898,7 @@ int rr_read( rrchain_t *rrchain, char *buf, int blks, int *errcount
 				else
 #endif /* RR_FIN_WKARND */
 					loopblkcount = fileblkcount;
+			}
 #ifdef RR_DECODETEST
 			if ( fileblk == 3586 ) {
 				loopblkcount = 1;
@@ -1899,7 +1909,9 @@ int rr_read( rrchain_t *rrchain, char *buf, int blks, int *errcount
 				readptr = buf;
 			len2 = _read( handle, readptr, len );
 			if ( len2 < 0 ) {
-			readerr:
+#ifdef __WIN32__
+			readerr:	// goto РёР· РІРµС‚РєРё _eof() РЅРёР¶Рµ
+#endif /* __WIN32__ */
 				rc = rr_readerr(
 #ifdef RR_FILL_BAD
 						rrchain,
@@ -1915,7 +1927,7 @@ int rr_read( rrchain_t *rrchain, char *buf, int blks, int *errcount
 				goto main_err;*/
 			}
 			loop_blks_read = len2 / blklen; //len2 %= blklen;
-			if ( loop_blks_read < loopblkcount ) {	// прочитали меньше, чем надо
+			if ( loop_blks_read < loopblkcount ) {	// РїСЂРѕС‡РёС‚Р°Р»Рё РјРµРЅСЊС€Рµ, С‡РµРј РЅР°РґРѕ
 #ifdef __WIN32__
 				if ( !_eof( handle ) ) {
 					if ( loop_blks_read == 0 )
@@ -1927,7 +1939,7 @@ int rr_read( rrchain_t *rrchain, char *buf, int blks, int *errcount
 							rfnum, loop_blks_read, &error, loop_map, /*errcount,*/ rc,
 							fileblk, filename, 1 );
 //					if ( errcount ) (*errcount)++;
-//					if ( ( total_blks_read + loop_blks_read ) == 0 )	// ничего не прочитали
+//					if ( ( total_blks_read + loop_blks_read ) == 0 )	// РЅРёС‡РµРіРѕ РЅРµ РїСЂРѕС‡РёС‚Р°Р»Рё
 //						goto readerr;
 					if ( rc <= FATAL_ERROR )
 						goto err1;
@@ -1935,12 +1947,12 @@ int rr_read( rrchain_t *rrchain, char *buf, int blks, int *errcount
 				} else
 #endif /*__WIN32__*/
 				{	// EOF
-					if ( ( ( len2 + blklen ) <= len )	// не хватает целого блока или более
+					if ( ( ( len2 + blklen ) <= len )	// РЅРµ С…РІР°С‚Р°РµС‚ С†РµР»РѕРіРѕ Р±Р»РѕРєР° РёР»Рё Р±РѕР»РµРµ
 #ifndef RR_CUT_COPY
-						|| ( rfnum.type /*> DUMMY*/ & COPIED )	// EOF в копии
+						|| ( rfnum.type /*> DUMMY*/ & COPIED )	// EOF РІ РєРѕРїРёРё
 #endif /* RR_CUT_COPY */
-						|| ( blklen == XCD_LEN ) ) {	// EOF в XCD
-						// значит, что-то не то:
+						|| ( blklen == XCD_LEN ) ) {	// EOF РІ XCD
+						// Р·РЅР°С‡РёС‚, С‡С‚Рѕ-С‚Рѕ РЅРµ С‚Рѕ:
 						error = EILSEQ;
 						loop_map[ loop_blks_read ].type = BAD;
 						if ( errcount )
@@ -1951,7 +1963,7 @@ int rr_read( rrchain_t *rrchain, char *buf, int blks, int *errcount
 							"%s file %s, sector %d: unexpected EOF\n",
 							( rfnum.type /*> DUMMY*/ & COPIED ) ? "target" : "source",
 							filename, fileblk );
-	//					rc = FATAL_ERROR;	// %%% лучше пусть восстанавливает
+	//					rc = FATAL_ERROR;	// %%% Р»СѓС‡С€Рµ РїСѓСЃС‚СЊ РІРѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµС‚
 						if ( rfnum.type /*> DUMMY*/ & COPIED ) {
 //							rrchain->blk_map[ rrchain->pos_blks ] = -rfnum;
 							rc = FATAL_ERROR;
@@ -1962,12 +1974,12 @@ int rr_read( rrchain_t *rrchain, char *buf, int blks, int *errcount
 						}
 //						if ( rrchain->verbosity >= VERBOSE_INFO )
 //							fputs( printf_msg, stdout );
-// %%% нельзя просто так уходить на ok ! use endloop_flag instead
+// %%% РЅРµР»СЊР·СЏ РїСЂРѕСЃС‚Рѕ С‚Р°Рє СѓС…РѕРґРёС‚СЊ РЅР° ok ! use endloop_flag instead
 						if ( total_blks_read == 0 )
 							goto err1;
 						endloop_flag = 1;
 					} else {
-// легальный EOF в не-XCD-файле:
+// Р»РµРіР°Р»СЊРЅС‹Р№ EOF РІ РЅРµ-XCD-С„Р°Р№Р»Рµ:
 						if ( ( len2 % blklen ) > 0 ) {
 							memset( readptr + len2, 0, blklen - ( len2 % blklen ) );
 							loop_blks_read++; //buf += OGM_LEN;
@@ -1976,7 +1988,7 @@ int rr_read( rrchain_t *rrchain, char *buf, int blks, int *errcount
 				}
 			}
 
-			if ( ( /*rfnum < 0 ) && ( file->*/blklen == XCD_LEN ) ) {
+			if ( blklen == XCD_LEN ) {
 				int local_blks = loop_blks_read, local_ready;
 				int start_blk = 0;
 				char *tbuf = buf;
@@ -1984,7 +1996,7 @@ int rr_read( rrchain_t *rrchain, char *buf, int blks, int *errcount
 				while ( local_blks > 0 ) {
 					local_ready = rr_deblock( tbuf, tptr, file->native_blklen,
 							local_blks );
-					if ( local_ready < local_blks ) {	// кривой сектор
+					if ( local_ready < local_blks ) {	// РєСЂРёРІРѕР№ СЃРµРєС‚РѕСЂ
 						if ( local_ready < 0 )
 							local_ready = 0;
 //						rr_markrough( fileblk + file->blk_from + local_ready );
@@ -2017,7 +2029,7 @@ int rr_read( rrchain_t *rrchain, char *buf, int blks, int *errcount
 						memset( tbuf + blklen, 0, rrchain->max_blklen - blklen );
 					}
 				}
-// рассматриваем блоки из сплошных нулей как битые:
+// СЂР°СЃСЃРјР°С‚СЂРёРІР°РµРј Р±Р»РѕРєРё РёР· СЃРїР»РѕС€РЅС‹С… РЅСѓР»РµР№ РєР°Рє Р±РёС‚С‹Рµ:
 				tbuf = buf;
 				while ( local_blks > 0 ) {
 					local_good = ( /*( file->need_flags & NO_RRPROCESS ) ||*/
@@ -2049,7 +2061,7 @@ int rr_read( rrchain_t *rrchain, char *buf, int blks, int *errcount
 					loop_map[ jx ].type = GOOD;
 				}*/
 			}
-// rr_makecopy копирует xcd в xcd без чистки:
+// rr_makecopy РєРѕРїРёСЂСѓРµС‚ xcd РІ xcd Р±РµР· С‡РёСЃС‚РєРё:
 			if ( rfnum.type /*< DUMMY*/ & NOTCOPIED ) {
 				int jt = rr_makecopy( rrchain, rfnum, fileblk, loop_blks_read, buf,
 						loop_map, &error );
@@ -2060,17 +2072,17 @@ int rr_read( rrchain_t *rrchain, char *buf, int blks, int *errcount
 					rc = jt; goto err1;
 				}
 /*
-				if ( file->out_handle != -1 ) {	// отметим, что уже есть копия
+				if ( file->out_handle != -1 ) {	// РѕС‚РјРµС‚РёРј, С‡С‚Рѕ СѓР¶Рµ РµСЃС‚СЊ РєРѕРїРёСЏ
 					for ( jt = 0; jt < loop_blks_read; jt++ )
 						if ( loop_map[ jt ].type > DUMMY )
 						rrchain->blk_map[ fileblk + file->blk_from + jt ].type = GOOD;
-// перенесено в rr_makecopy:
+// РїРµСЂРµРЅРµСЃРµРЅРѕ РІ rr_makecopy:
 					if ( file->out_blks < ( fileblk + loop_blks_read ) )
 						file->out_blks = fileblk + loop_blks_read;
 				}
 */
 			}
-// %%% доделать quick hack - сохранять битый пакет в копию: чистить сектор
+// %%% РґРѕРґРµР»Р°С‚СЊ quick hack - СЃРѕС…СЂР°РЅСЏС‚СЊ Р±РёС‚С‹Р№ РїР°РєРµС‚ РІ РєРѕРїРёСЋ: С‡РёСЃС‚РёС‚СЊ СЃРµРєС‚РѕСЂ
 			fileblk += loop_blks_read;
 			total_blks_read += loop_blks_read;
 			buf += rrchain->max_blklen * loop_blks_read;
@@ -2090,15 +2102,15 @@ ok2:
 	rrchain->last_error = 0;
 	if ( rc >= NO_ERROR )
 		return ( total_blks_read );
-// это всё работает, только когда были ошибки:
+// СЌС‚Рѕ РІСЃС‘ СЂР°Р±РѕС‚Р°РµС‚, С‚РѕР»СЊРєРѕ РєРѕРіРґР° Р±С‹Р»Рё РѕС€РёР±РєРё:
 	rc = total_blks_read;
 //	rrchain->pos_blks++;
 //	printf( "%d blocks read\n", total_blks_read );
 #ifndef RR_FILL_BAD
-	rrchain->pos_blks--;	// для компенсации следующей строки
+	rrchain->pos_blks--;	// РґР»СЏ РєРѕРјРїРµРЅСЃР°С†РёРё СЃР»РµРґСѓСЋС‰РµР№ СЃС‚СЂРѕРєРё
 err1:
 	memset( buf, 0, rrchain->max_blklen ); rrchain->pos_blks++;
-	if ( ( rc > FATAL_ERROR ) && ( rfnum.type /*< DUMMY*/ & NOTCOPIED ) ) {	// записать в файл-копию
+	if ( ( rc > FATAL_ERROR ) && ( rfnum.type /*< DUMMY*/ & NOTCOPIED ) ) {	// Р·Р°РїРёСЃР°С‚СЊ РІ С„Р°Р№Р»-РєРѕРїРёСЋ
 		int jt;
 //		sprintf( buf, "=== BADBLOCK #%06d ===", rrchain->pos_blks - 1 );
 		if ( ( jt = rr_makecopy( rrchain, rfnum, fileblk, 1, NULL,
@@ -2121,7 +2133,7 @@ int rr_write( rrchain_t *rrchain, char *buf, int blkcount ) {
 	jt,
 //		filenum,
 	handle,
-	fileblk;			// номер начального блока в файле
+	fileblk;			// РЅРѕРјРµСЂ РЅР°С‡Р°Р»СЊРЅРѕРіРѕ Р±Р»РѕРєР° РІ С„Р°Р№Р»Рµ
 	rritem_t *file;
 	rrmap_t rfnum;
 	char *decoy_ptr;
@@ -2130,7 +2142,7 @@ int rr_write( rrchain_t *rrchain, char *buf, int blkcount ) {
 			"Unsupported parameter: ( blkcount == %d ) != 1\n", blkcount );
 		return ( FATAL_ERROR );
 	}
-	rfnum.sector = rrchain->blk_map[ rrchain->pos_blks ].sector;
+	rfnum = rrchain->blk_map[ rrchain->pos_blks ];
 	if ( rfnum.type & DUMMY )
 		return ( blkcount );
 //	if ( rfnum > 0 )
@@ -2174,7 +2186,7 @@ int rr_last_error( rrchain_t *rrchain ) {
 int rr_errcount( rrchain_t *rrchain ) {
 	int jx, jy;
 	for ( jx = 0, jy = 0; jx < rrchain->total_blks; jx++ )
-		if ( rrchain->blk_map[ jx ].type /*< DUMMY*/ & NOTCOPIED )	// не скопировался
+		if ( rrchain->blk_map[ jx ].type /*< DUMMY*/ & NOTCOPIED )	// РЅРµ СЃРєРѕРїРёСЂРѕРІР°Р»СЃСЏ
 			jy++;
 	return ( jy );
 }
@@ -2182,7 +2194,7 @@ int *rr_errlocs( rrchain_t *rrchain ) {
 	int jx, jy;
 	int *ret = rrchain->err_locs;
 	for ( jx = 0, jy = 0; jx < rrchain->total_blks; jx++ ) {
-		if ( rrchain->blk_map[ jx ].type /*< DUMMY*/ & NOTCOPIED ) {	// не скопировался
+		if ( rrchain->blk_map[ jx ].type /*< DUMMY*/ & NOTCOPIED ) {	// РЅРµ СЃРєРѕРїРёСЂРѕРІР°Р»СЃСЏ
 			if ( jy >= rrchain->err_limit )
 				return ( NULL );
 			ret[ jy++ ] = jx;
@@ -2223,7 +2235,7 @@ int rr_typelen( rrchain_t *rrchain, int pos, int limit ) {
 		limit = maxret;
 	}
 	for ( jx = /*pos +*/ 1; jx < /*rrchain->total_blks*/ limit; jx++ ) {
-		if ( type.sector != rrchain->blk_map[ pos + jx ].sector )
+		if ( !RRMAP_EQ( type, rrchain->blk_map[ pos + jx ] ) )
 			return ( jx /*- pos*/ );
 	}
 //	return ( 1 );
@@ -2237,7 +2249,7 @@ int rr_used_rrcount( rrchain_t *rrchain, int copied_only ) {
 	} else {
 		for ( js = 0; js < RR_STREAMNUM; js++ ) {
 			for ( jx = js, jy = 0; jx < rrchain->total_blks; jx += RR_STREAMNUM )
-				if ( rrchain->blk_map[ jx ].type /*< DUMMY*/ & jm )	// не скопировался
+				if ( rrchain->blk_map[ jx ].type /*< DUMMY*/ & jm )	// РЅРµ СЃРєРѕРїРёСЂРѕРІР°Р»СЃСЏ
 					jy++;
 			if ( jy > jr )
 				jr = jy;
@@ -2249,7 +2261,7 @@ int rr_used_rrcount( rrchain_t *rrchain, int copied_only ) {
 int rr_closein( rrchain_t *rrchain ) {
 	int jx, rc = 0;
 	struct list_head *jp;
-	rr_select( rrchain, NULL, NULL );	// закроем всё
+	rr_select( rrchain, NULL, NULL );	// Р·Р°РєСЂРѕРµРј РІСЃС‘
 	rrchain->bad_sectors = rrchain->untouched_sectors = -1;
 list_for_each( jp, &rrchain->items_list ) {
 	rritem_t *file = list_entry( jp, rritem_t, list_item );
@@ -2271,7 +2283,7 @@ for ( jx = 0; jx < rrchain->total_blks; jx++ ) {
 return ( rc );
 }
 /*
-int rr_savelist(	// ВНИМАНИЕ! Функция заточена под CD-ROM (блоки 2048 и 2324)
+int rr_savelist(	// Р’РќРРњРђРќРР•! Р¤СѓРЅРєС†РёСЏ Р·Р°С‚РѕС‡РµРЅР° РїРѕРґ CD-ROM (Р±Р»РѕРєРё 2048 Рё 2324)
 		rrchain_t *rrchain, FILE *outfile ) {
 //	char buf[ 3 * _MAX_PATH ];
 	char buf1[ _MAX_DIR ] = "", buf2[ _MAX_DIR ] = "",
@@ -2298,7 +2310,7 @@ err:
 			if ( *dirend == '\\' )
 				*dirend = '\0';
 		}
-		if ( strcmp( dir1, dir2 ) ) {	// ё-пс! смена каталога
+		if ( strcmp( dir1, dir2 ) ) {	// С‘-РїСЃ! СЃРјРµРЅР° РєР°С‚Р°Р»РѕРіР°
 			char *tdir = dir1;
 			fprintf( outfile, "-d %s\n", dir1 );
 			strcpy( dir2, dir1 );
@@ -2331,7 +2343,7 @@ int rr_lastfile_size( rrchain_t *rrchain ) {
 	return ( list_entry(rrchain->items_list.prev, rritem_t,
 			list_item )->filesize );
 }
-int rr_lastfile_time( rrchain_t *rrchain ) {
+time_t rr_lastfile_time( rrchain_t *rrchain ) {
 	if ( list_empty( &rrchain->items_list ) )
 		return ( SOFT_ERROR );
 	return ( list_entry(rrchain->items_list.prev, rritem_t,
@@ -2414,7 +2426,7 @@ int rr_dummy_blk( rrchain_t *rrchain, int blknum ) {
 	rrchain->bad_sectors = rrchain->untouched_sectors = -1;
 	return ( NO_ERROR );
 }
-/* было для RR_PROBE_MODE
+/* Р±С‹Р»Рѕ РґР»СЏ RR_PROBE_MODE
 int rr_blk_tag( rrchain_t *rr, int blknum, rrblktag_t *tag ) {
 	rritem_t *file;
 	if ( ( blknum < 0 ) || ( blknum >= rr->total_blks ) )
@@ -2437,16 +2449,16 @@ int rr_blks( rrchain_t *rrchain ) {
 	return ( rrchain->total_blks );
 }
 #ifdef RR_DMG_ENTRIES
-int rr_byte2blk( rritem_t *file, size_t pos ) {	// какому блоку принадлежит байт
+int rr_byte2blk( rritem_t *file, size_t pos ) {	// РєР°РєРѕРјСѓ Р±Р»РѕРєСѓ РїСЂРёРЅР°РґР»РµР¶РёС‚ Р±Р°Р№С‚
 	return ( ( file == NULL ) ? FATAL_ERROR :
 		( ( ( pos < 0 ) || ( pos >= file->len_bytes ) )
 			? -1 : ( ( pos < file->in_skip_bytes ) ? 0 :
 				( ( pos - file->in_skip_bytes ) / file->native_blklen ) ) ) );
 }
-int rr_get1st_blk( rritem_t *file ) {	// с какого блока начинается файл
+int rr_get1st_blk( rritem_t *file ) {	// СЃ РєР°РєРѕРіРѕ Р±Р»РѕРєР° РЅР°С‡РёРЅР°РµС‚СЃСЏ С„Р°Р№Р»
 	return ( file->blk_from );
 }
-int rr_getblks( rritem_t *file ) {	// сколько блоков в файле
+int rr_getblks( rritem_t *file ) {	// СЃРєРѕР»СЊРєРѕ Р±Р»РѕРєРѕРІ РІ С„Р°Р№Р»Рµ
 	return ( file->len_blks );
 }
 rrchain_t *rr_getchain( rritem_t *file ) {

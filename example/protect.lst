@@ -1,7 +1,7 @@
 # (ENG) List of files to be protected
-# (RUS) ëØ®·Æ™ ‰†©´Æ¢ §´Ô ß†È®‚Î
+# (RUS) –°–ø–∏—Å–æ–∫ —Ñ–∞–π–ª–æ–≤ –¥–ª—è –∑–∞—â–∏—Ç—ã
 # (ENG) The command before filename can be: -i - to protect, -f - to not protect, -x - to make .xcd-file and protect
-# (RUS) äÆ¨†≠§† Ø•‡•§ ®¨•≠•¨ ‰†©´†: -i - ß†È®È†‚Ï, -f - ≠• ß†È®È†‚Ï, -x - §•´†‚Ï XCD-‰†©´ ® ß†È®È†‚Ï
+# (RUS) –ö–æ–º–∞–Ω–¥–∞ –ø–µ—Ä–µ–¥ –∏–º–µ–Ω–µ–º —Ñ–∞–π–ª–∞: -i - –∑–∞—â–∏—â–∞—Ç—å, -f - –Ω–µ –∑–∞—â–∏—â–∞—Ç—å, -x - –¥–µ–ª–∞—Ç—å XCD-—Ñ–∞–π–ª –∏ –∑–∞—â–∏—â–∞—Ç—å
 
 -i Makefile
 -i getopt.c
@@ -29,7 +29,7 @@
 -i rrm_int.h
 -i rrmath.h
 -i xcdhdrs.h
--i COPYING.txt
+-i LICENSE
 
 -i win32\rrdec.exe
 -i win32\rrenc.exe
@@ -82,10 +82,10 @@
 -i example\rrd_head.mkv
 
 # (ENG) .rrt file (RR-text == input list for RRDEC) wil be generated
-# (RUS) °„§•‚ ·£•≠•‡®‡Æ¢†≠ rrt-‰†©´ (RR-text) - ¢ÂÆ§≠Æ© ·Ø®·Æ™ §´Ô RRDEC
+# (RUS) –±—É–¥–µ—Ç —Å–≥–µ–Ω–µ—Ä–∏—Ä–æ–≤–∞–Ω rrt-—Ñ–∞–π–ª (RR-text) - –≤—Ö–æ–¥–Ω–æ–π —Å–ø–∏—Å–æ–∫ –¥–ª—è RRDEC
 -@
 
 # (ENG) .rrd file (RR-data == redundant data) wil be generated
-# (RUS) °„§•‚ ·£•≠•‡®‡Æ¢†≠ rrd-‰†©´ (RR-data) - ®ß°Î‚ÆÁ≠Î• (ß†È®‚≠Î•) §†≠≠Î•
+# (RUS) –±—É–¥–µ—Ç —Å–≥–µ–Ω–µ—Ä–∏—Ä–æ–≤–∞–Ω rrd-—Ñ–∞–π–ª (RR-data) - –∏–∑–±—ã—Ç–æ—á–Ω—ã–µ (–∑–∞—â–∏—Ç–Ω—ã–µ) –¥–∞–Ω–Ω—ã–µ
 -r
 

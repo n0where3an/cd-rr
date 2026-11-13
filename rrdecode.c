@@ -1,9 +1,10 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
 #include "rrm_int.h"
 int rr_decode( /*const*/ rrtable_t *rr, 
-		int blk_count,	// кол-во блоков на обработку
-//		int num,				// номер первого обрабатываемого блока
-		rrdata_t *Data			// собственно данные
-//		int blk_total,	// сумма кол-ва блоков с данными и ремонтных 
+		int blk_count,	// РєРѕР»-РІРѕ Р±Р»РѕРєРѕРІ РЅР° РѕР±СЂР°Р±РѕС‚РєСѓ
+//		int num,				// РЅРѕРјРµСЂ РїРµСЂРІРѕРіРѕ РѕР±СЂР°Р±Р°С‚С‹РІР°РµРјРѕРіРѕ Р±Р»РѕРєР°
+		rrdata_t *Data			// СЃРѕР±СЃС‚РІРµРЅРЅРѕ РґР°РЅРЅС‹Рµ
+//		int blk_total,	// СЃСѓРјРјР° РєРѕР»-РІР° Р±Р»РѕРєРѕРІ СЃ РґР°РЅРЅС‹РјРё Рё СЂРµРјРѕРЅС‚РЅС‹С… 
 //		int *EraLoc, int EraSize
 		 ) {
 //	int offset;
@@ -45,11 +46,11 @@ int rr_decode( /*const*/ rrtable_t *rr,
 //		if ( num == 0 ) {
 //			Clean( sum, rr->blksize );
 //		}
-		jd = jb = 0; do {	// по блокам
+		jd = jb = 0; do {	// РїРѕ Р±Р»РѕРєР°Рј
 			int jp = 0;
 //			int *sum = rr->SynData[ jp ];
 #ifdef RR_BLOCKLOOP
-			if ( jp + 4 <= rr->blksize ) do {	// по позициям
+			if ( jp + 4 <= rr->blksize ) do {	// РїРѕ РїРѕР·РёС†РёСЏРј
 				RR_ADD( cc1, 4 );
 				sum[ jp     ] = Data[ jd     ] ^ rr_mult( rr, sum[ jp     ], jm );
 				sum[ jp + 1 ] = Data[ jd + 1 ] ^ rr_mult( rr, sum[ jp + 1 ], jm );
@@ -86,17 +87,17 @@ int gfMult( const rrtable_t *rr, int a, int b ) {
 }
 
 int rr_restore( const rrtable_t *rr, 
-//		int blk_count,	// кол-во блоков на обработку
-//		int num,				// номер первого обрабатываемого блока
-//		rrdata_t *Data,			// собственно данные
-		int blk_total,	// сумма кол-ва блоков с данными и ремонтных 
-		int secsize,		// размер блока в байтах
+//		int blk_count,	// РєРѕР»-РІРѕ Р±Р»РѕРєРѕРІ РЅР° РѕР±СЂР°Р±РѕС‚РєСѓ
+//		int num,				// РЅРѕРјРµСЂ РїРµСЂРІРѕРіРѕ РѕР±СЂР°Р±Р°С‚С‹РІР°РµРјРѕРіРѕ Р±Р»РѕРєР°
+//		rrdata_t *Data,			// СЃРѕР±СЃС‚РІРµРЅРЅРѕ РґР°РЅРЅС‹Рµ
+		int blk_total,	// СЃСѓРјРјР° РєРѕР»-РІР° Р±Р»РѕРєРѕРІ СЃ РґР°РЅРЅС‹РјРё Рё СЂРµРјРѕРЅС‚РЅС‹С… 
+		int secsize,		// СЂР°Р·РјРµСЂ Р±Р»РѕРєР° РІ Р±Р°Р№С‚Р°С…
 //		int EraLoc[], 
-		int errcount,		// кол-во сбойных секторов
-		int errnums[],	// их номера
-		rrdata_t *errlocs[]	// их координаты 	
+		int errcount,		// РєРѕР»-РІРѕ СЃР±РѕР№РЅС‹С… СЃРµРєС‚РѕСЂРѕРІ
+		int errnums[],	// РёС… РЅРѕРјРµСЂР°
+		rrdata_t *errlocs[]	// РёС… РєРѕРѕСЂРґРёРЅР°С‚С‹ 	
 		) {
-// %%% _очень_ медленно работает при большом размере сектора!
+// %%% _РѕС‡РµРЅСЊ_ РјРµРґР»РµРЅРЅРѕ СЂР°Р±РѕС‚Р°РµС‚ РїСЂРё Р±РѕР»СЊС€РѕРј СЂР°Р·РјРµСЂРµ СЃРµРєС‚РѕСЂР°!
 //  int PolD[ MAXPOL ];
 //	int PolB[ MAXPOL ];
 	int EraPos, Root;
@@ -160,7 +161,6 @@ int rr_restore( const rrtable_t *rr,
 		rrcode_t *ErrorLocs = errorlocs[ js ];
 */
 		int ErrCount = 0;
-		int stream_errs = 0;
 		Clean( PolB, rr->rrcount + 1 );
 		Clean( Dn, rr->rrcount + 1 );
 		Clean( ErrorLocs, rr->rrcount + 1 );
@@ -181,7 +181,6 @@ int rr_restore( const rrtable_t *rr,
 			for ( jc = rr->rrcount /*, 
 				M = rr->gfExp[ blk_total - stream_errpos - 1 ]*/; jc > 0; jc-- )
 				PolB[ jc ] ^= rr_mult( rr, /*M,*/ PolB[ jc - 1 ], jm );
-			stream_errs++;
 		}
 //		printf( "point 2\n" );
 		for ( Root = MAXPAR - blk_total; Root < MAXPAR + 1; Root++ ) {

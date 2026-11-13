@@ -1,118 +1,91 @@
-//--------------------------------------------------------------------------
-// Авторское право:	Linux kernel
-// Файл:			list.h
-// Aннотация:	структуры и макро для работы со связными списками
-//--------------------------------------------------------------------------
-
-#ifndef _LINUX_LIST_H
-#define _LINUX_LIST_H
-
-#ifdef __KERNEL__
-
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
 /*
- * Simple doubly linked list implementation.
+ * list.h - intrusive circular doubly linked list.
  *
- * Some of the internal functions ("__xxx") are useful when
- * manipulating whole lists rather than single entries, as
- * sometimes we already know the next/prev entries and we can
- * generate better code by using them directly rather than
- * using the generic single-entry routines.
+ * A list is a sentinel `struct list_head`; an empty list points to itself.
+ * Items embed a `struct list_head` member and are recovered from it with
+ * list_entry().
+ *
+ * Contract relied upon by the callers: list_del() unlinks an entry from its
+ * neighbours but leaves the entry's own next/prev untouched, so the
+ * list_for_each() loop may delete the current entry and continue.
  */
+#ifndef RR_LIST_H
+#define RR_LIST_H
+
+#include <stddef.h>
+
+#if defined( _MSC_VER ) && !defined( __cplusplus )
+	#define RR_LIST_INLINE static __inline
+#else
+	#define RR_LIST_INLINE static inline
+#endif
 
 struct list_head {
 	struct list_head *next, *prev;
 };
 
-#define LIST_HEAD_INIT(name) { &(name), &(name) }
+/* static initializer for an empty list */
+#define LIST_HEAD_INIT( name ) { &(name), &(name) }
 
-#define LIST_HEAD(name) \
-	struct list_head name = LIST_HEAD_INIT(name)
+/* defines and initializes an empty list */
+#define LIST_HEAD( name ) \
+	struct list_head name = LIST_HEAD_INIT( name )
 
-#define INIT_LIST_HEAD(ptr) do { \
-	(ptr)->next = (ptr); (ptr)->prev = (ptr); \
-} while (0)
+/* makes an empty list at run time */
+#define INIT_LIST_HEAD( head ) \
+	do { \
+		(head)->next = (head); \
+		(head)->prev = (head); \
+	} while (0)
 
-/*
- * Insert a new entry between two known consecutive entries. 
- *
- * This is only for internal list manipulation where we know
- * the prev/next entries already!
- */
-static __inline__ void __list_add(struct list_head * new,
-	struct list_head * prev,
-	struct list_head * next)
-{
-	next->prev = new;
-	new->next = next;
-	new->prev = prev;
-	prev->next = new;
+/* links `item` between two adjacent entries */
+RR_LIST_INLINE void rr_list_link( struct list_head *item,
+		struct list_head *before, struct list_head *after ) {
+	item->prev = before;
+	item->next = after;
+	before->next = item;
+	after->prev = item;
 }
 
-/*
- * Insert a new entry after the specified head..
- */
-static __inline__ void list_add(struct list_head *new, struct list_head *head)
-{
-	__list_add(new, head, head->next);
+/* inserts `item` right after `head` (at the front of the list) */
+RR_LIST_INLINE void list_add( struct list_head *item, struct list_head *head ) {
+	rr_list_link( item, head, head->next );
 }
 
-/*
- * Insert a new entry before the specified head..
- */
-static __inline__ void list_add_tail(struct list_head *new, struct list_head *head)
-{
-	__list_add(new, head->prev, head);
+/* inserts `item` right before `head` (at the back of the list) */
+RR_LIST_INLINE void list_add_tail( struct list_head *item, struct list_head *head ) {
+	rr_list_link( item, head->prev, head );
 }
 
-/*
- * Delete a list entry by making the prev/next entries
- * point to each other.
- *
- * This is only for internal list manipulation where we know
- * the prev/next entries already!
- */
-static __inline__ void __list_del(struct list_head * prev,
-				  struct list_head * next)
-{
-	next->prev = prev;
-	prev->next = next;
+/* unlinks `item`; item->next/prev keep their values (see the contract above) */
+RR_LIST_INLINE void list_del( struct list_head *item ) {
+	item->prev->next = item->next;
+	item->next->prev = item->prev;
 }
 
-static __inline__ void list_del(struct list_head *entry)
-{
-	__list_del(entry->prev, entry->next);
+RR_LIST_INLINE int list_empty( const struct list_head *head ) {
+	return ( head->next == head );
 }
 
-static __inline__ int list_empty(struct list_head *head)
-{
-	return head->next == head;
-}
-
-/*
- * Splice in "list" into "head"
- */
-static __inline__ void list_splice(struct list_head *list, struct list_head *head)
-{
-	struct list_head *first = list->next;
-
-	if (first != list) {
-		struct list_head *last = list->prev;
-		struct list_head *at = head->next;
-
+/* moves all entries of `list` to the front of `head`; `list` is left stale */
+RR_LIST_INLINE void list_splice( struct list_head *list, struct list_head *head ) {
+	if ( !list_empty( list ) ) {
+		struct list_head *first = list->next, *last = list->prev;
+		struct list_head *after = head->next;
 		first->prev = head;
 		head->next = first;
-
-		last->next = at;
-		at->prev = last;
+		last->next = after;
+		after->prev = last;
 	}
 }
 
-#define list_entry(ptr, type, member) \
-	((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))
+/* pointer to the structure of `type` whose `member` is `ptr` */
+#define list_entry( ptr, type, member ) \
+	( (type *) ( (char *) (ptr) - offsetof( type, member ) ) )
 
-#define list_for_each(pos, head) \
-	for (pos = (head)->next; pos != (head); pos = pos->next)
+/* iterates `pos` over all entries of `head` */
+#define list_for_each( pos, head ) \
+	for ( (pos) = (head)->next; (pos) != (head); (pos) = (pos)->next )
 
-#endif /* __KERNEL__ */
-
-#endif
+#endif /* RR_LIST_H */

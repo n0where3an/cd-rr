@@ -1,7 +1,8 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
 /*
 TODO:
-	- ключик для вывода в .um2 команд в длинной форме - для читабельности
-	- на ходу генерировать список с .md5-суммами файлов
+	- РєР»СЋС‡РёРє РґР»СЏ РІС‹РІРѕРґР° РІ .um2 РєРѕРјР°РЅРґ РІ РґР»РёРЅРЅРѕР№ С„РѕСЂРјРµ - РґР»СЏ С‡РёС‚Р°Р±РµР»СЊРЅРѕСЃС‚Рё
+	- РЅР° С…РѕРґСѓ РіРµРЅРµСЂРёСЂРѕРІР°С‚СЊ СЃРїРёСЃРѕРє СЃ .md5-СЃСѓРјРјР°РјРё С„Р°Р№Р»РѕРІ
 */
 #include "config.h"
 //#include <conio.h>
@@ -52,23 +53,23 @@ TODO:
 #define BLKNUM 1024
 //#define BLKNUM 5000
 
-// прочие define'ы
+// РїСЂРѕС‡РёРµ define'С‹
 #ifndef RR_ALLOW_ABSPATH
 	#define NEED_ABSBASE
 #else /* RR_ALLOW_ABSPATH */
 	#define NEED_ABSBASE \
-		( global_opts.process_dir != DIR_EXPLICIT ),	/* НЕ распяливать base-каталоги до абсолютных, */ \
-								/* только если указан "--process-dir" */
+		( global_opts.process_dir != DIR_EXPLICIT ),	/* РќР• СЂР°СЃРїСЏР»РёРІР°С‚СЊ base-РєР°С‚Р°Р»РѕРіРё РґРѕ Р°Р±СЃРѕР»СЋС‚РЅС‹С…, */ \
+								/* С‚РѕР»СЊРєРѕ РµСЃР»Рё СѓРєР°Р·Р°РЅ "--process-dir" */
 #endif /* RR_ALLOW_ABSPATH */
 
 opts_t global_opts;
 char vol_label[ 0x20 ] = "";
 #ifdef RR_STORE_EDC
-	LIST_HEAD( global_list );	//сразу проинициализируем
+	LIST_HEAD( global_list );	//СЃСЂР°Р·Сѓ РїСЂРѕРёРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј
 #endif /* RR_STORE_EDC */
 
 const struct option long_opts[] = {
-	{ "help",           0, NULL, 'h' },	// он и в Африке help
+	{ "help",           0, NULL, 'h' },	// РѕРЅ Рё РІ РђС„СЂРёРєРµ help
 	{ "quiet",          0, NULL, 'q' },
 	{ "verbose",        0, NULL, 'v' },
 	{ "overwrite",      0, NULL, 'w' },
@@ -117,14 +118,14 @@ int LSetCommandLine(char *jpcmdline,int argc, char **argv) {
 		la = strlen (argv[lx]);
 		jquote = 0;
 		jptrz = jpcmdline+ll;
-		//ищем "' '
-		//ищем 0x22;0x27;0x20;
+		//РёС‰РµРј "' '
+		//РёС‰РµРј 0x22;0x27;0x20;
 		lz = la;
 		jptra = argv[lx];
 		jptrp = 0;
 		do {
-			//Begin:Экранируемые слешем и кавычками
-			//нужно не только факт наличия но и минимальная позиция
+			//Begin:Р­РєСЂР°РЅРёСЂСѓРµРјС‹Рµ СЃР»РµС€РµРј Рё РєР°РІС‹С‡РєР°РјРё
+			//РЅСѓР¶РЅРѕ РЅРµ С‚РѕР»СЊРєРѕ С„Р°РєС‚ РЅР°Р»РёС‡РёСЏ РЅРѕ Рё РјРёРЅРёРјР°Р»СЊРЅР°СЏ РїРѕР·РёС†РёСЏ
 			jc = 0x22;
 			jptr = (char*) memchr (jptra, jc , lz);//'"'
 			if (!jptr) {
@@ -143,9 +144,9 @@ int LSetCommandLine(char *jpcmdline,int argc, char **argv) {
 				jptr = jptrp;
 				jc = jp;
 			}
-			//End:Экранируемые слешем и кавычками
-			//Begin:Экранируемые кавычками
-			//нужно только факт наличия
+			//End:Р­РєСЂР°РЅРёСЂСѓРµРјС‹Рµ СЃР»РµС€РµРј Рё РєР°РІС‹С‡РєР°РјРё
+			//Begin:Р­РєСЂР°РЅРёСЂСѓРµРјС‹Рµ РєР°РІС‹С‡РєР°РјРё
+			//РЅСѓР¶РЅРѕ С‚РѕР»СЊРєРѕ С„Р°РєС‚ РЅР°Р»РёС‡РёСЏ
 			if (!jptr) {
 				jp = 0x20;
 				jptr = (char*) memchr (jptra, jp , lz);//' '
@@ -154,10 +155,10 @@ int LSetCommandLine(char *jpcmdline,int argc, char **argv) {
 				jp = 0x24;
 				jptr = (char*) memchr (jptra, jp , lz);//'$'
 			}
-			//End:Экранируемые кавычками
+			//End:Р­РєСЂР°РЅРёСЂСѓРµРјС‹Рµ РєР°РІС‹С‡РєР°РјРё
 			if (jptr) {
-				//чевой-то нашли
-				if (jptra == argv[lx] && !jquote) { //первое вхождение, надо вставить начальную кавычку
+				//С‡РµРІРѕР№-С‚Рѕ РЅР°С€Р»Рё
+				if (jptra == argv[lx] && !jquote) { //РїРµСЂРІРѕРµ РІС…РѕР¶РґРµРЅРёРµ, РЅР°РґРѕ РІСЃС‚Р°РІРёС‚СЊ РЅР°С‡Р°Р»СЊРЅСѓСЋ РєР°РІС‹С‡РєСѓ
 					*(jptrz++) = 0x22;
 					la++;
 					jquote = 1;
@@ -169,14 +170,14 @@ int LSetCommandLine(char *jpcmdline,int argc, char **argv) {
 				*(jptrz +=lj) = 0x5c ; // '\'
 				*(++jptrz) = jc ; // ", '
 				++jptrz;
-				jptra = jptr +1; //сдвигаемся за обрамляемый символ
+				jptra = jptr +1; //СЃРґРІРёРіР°РµРјСЃСЏ Р·Р° РѕР±СЂР°РјР»СЏРµРјС‹Р№ СЃРёРјРІРѕР»
 				lz -= lj+1;
 				la++;
 			} else {
-				//копируем конец строки
+				//РєРѕРїРёСЂСѓРµРј РєРѕРЅРµС† СЃС‚СЂРѕРєРё
 				strncpy(jptrz,jptra,lz);
 				if (jquote) {
-					//копируем заключающую кавычку
+					//РєРѕРїРёСЂСѓРµРј Р·Р°РєР»СЋС‡Р°СЋС‰СѓСЋ РєР°РІС‹С‡РєСѓ
 					jptr = NULL;
 					*(jptrz+=lz) = 0x22;
 					*(++jptrz) = 0x0;
@@ -206,13 +207,17 @@ void copyright() {
 void usage( void ) {
 //	char drive[_MAX_DRIVE];
 //	char dir[_MAX_DIR];
-	char fname[_MAX_FNAME], *retname;
+	const char *retname;
+#ifdef __WIN32__
+	char fname[_MAX_FNAME];
+#endif // __WIN32__
 //	char ext[_MAX_EXT];
 #ifdef __WIN32__
 	_splitpath( progname, NULL, NULL, fname, NULL );
 	retname = fname;
 #else // __WIN32__
-	retname = basename( progname );
+	retname = strrchr( progname, '/' );	// basename() may modify its argument
+	retname = ( retname == NULL ) ? progname : retname + 1;
 #endif // __WIN32__
 	copyright();
 	rr_printmsg( VERBOSE_NORMAL,
@@ -410,12 +415,13 @@ void usage( void ) {
 }
 int rr_savelist( rrchain_t *rrchain, FILE *outfile,
 char *name, char *buf1, char *buf2, char **newdir ) {
-//#error "Расширить на случай пустого имени файла"
-//#error "Расширить на случай RRLIST_ITSELF"
-	int size, time, blklen,
+//#error "Р Р°СЃС€РёСЂРёС‚СЊ РЅР° СЃР»СѓС‡Р°Р№ РїСѓСЃС‚РѕРіРѕ РёРјРµРЅРё С„Р°Р№Р»Р°"
+//#error "Р Р°СЃС€РёСЂРёС‚СЊ РЅР° СЃР»СѓС‡Р°Р№ RRLIST_ITSELF"
+	int size, blklen,
 	flags = rr_lastfile_flags( rrchain );
+	time_t mtime;
 	char *dir1 = buf1, *dir2 = buf2, lenmode;
-	int dirlen, len; // fulllen, rc;
+	int dirlen; // fulllen, rc;
 #ifdef RR_IGNORE_DIR
 	char newname[_MAX_PATH];
 #endif /* RR_IGNORE_DIR */
@@ -450,7 +456,7 @@ char *name, char *buf1, char *buf2, char **newdir ) {
 		if ( *dirend == '\\' )
 			*dirend = '\0';
 	}
-	if ( strcmp( dir1, dir2 ) ) {	// ё-пс! смена каталога
+	if ( strcmp( dir1, dir2 ) ) {	// С‘-РїСЃ! СЃРјРµРЅР° РєР°С‚Р°Р»РѕРіР°
 		char *tdir = dir1;
 #ifndef RR_STORE_EDC
 		fprintf( outfile, "-d %s\n", dir1 );
@@ -463,18 +469,18 @@ char *name, char *buf1, char *buf2, char **newdir ) {
 noname:
 #ifndef RR_STORE_EDC
 	size = rr_lastfile_size( rrchain );
-	time = rr_lastfile_time( rrchain );
+	mtime = rr_lastfile_time( rrchain );
 	if ( flags & NEED_ALIGN )
 		lenmode = (char) toupper( lenmode );
 	if ( ( flags & ( NO_STRICT | NO_RRPROCESS ) ) ==
 		( NO_STRICT | NO_RRPROCESS ) ) {
-		len = fprintf( outfile, "-%c %s\n", lenmode, name );
+		fprintf( outfile, "-%c %s\n", lenmode, name );
 	} else {
-		len = fprintf( outfile, "-%c %9d %10d %s\n", lenmode,
-				( flags & NO_FILELEN ) ? -1 : (int) size, time, name );
+		fprintf( outfile, "-%c %9d %10lld %s\n", lenmode,
+				( flags & NO_FILELEN ) ? -1 : (int) size, (long long) mtime, name );
 	}
 #else /* RR_STORE_EDC */
-	#error "Придётся считать всё это в самом конце..."
+	#error "РџСЂРёРґС‘С‚СЃСЏ СЃС‡РёС‚Р°С‚СЊ РІСЃС‘ СЌС‚Рѕ РІ СЃР°РјРѕРј РєРѕРЅС†Рµ..."
 #endif /* RR_STORE_EDC */
 /*	if ( ferror( outfile ) ) {
 err:
@@ -644,7 +650,7 @@ int init_noread;
 	#define SET_START_BLOCK \
 		do { \
 			if ( global_opts.no_readfiles && ( rrdata != NULL ) ) \
-					/* будем читать только RR-header */ \
+					/* Р±СѓРґРµРј С‡РёС‚Р°С‚СЊ С‚РѕР»СЊРєРѕ RR-header */ \
 				*rrdata = item; \
 		} while (0)
 #endif /* RR_NEW_ENC */
@@ -733,7 +739,7 @@ rrchain_t * rrenc_prepare( char *rrdata_fname, int rrcount, char *rrlist_fname
 	FILE *src_file = NULL;
 	int rc, line = 0; // , jx, jy;
 	char inbuf[ INBUFLEN + 1 ];
-	char *outbuf;
+	const char *outbuf;
 	char *m2cdm_fname = global_opts.out_base;
 	char *plain_fname = global_opts.plain_listfile;
 	char *src_fname = global_opts.filelist;
@@ -757,10 +763,10 @@ rrchain_t * rrenc_prepare( char *rrdata_fname, int rrcount, char *rrlist_fname
 //	RRDATA_FILE_BUFFERS;
 	SRC_FILE_BUFFERS( "source list file" );
 
-//#error "Открывать файл ТОЛЬКО через rr_fullname от src_base"
-//#error "Осталась фигня - RRDATA_FILE сделать через ту же макру"
-//#error "Выделить общую часть из CREATE_SPECIAL_FILE и OPEN_SPECIAL_FILE"
-//#error "потом как-то присобачить для генерации имён"
+//#error "РћС‚РєСЂС‹РІР°С‚СЊ С„Р°Р№Р» РўРћР›Р¬РљРћ С‡РµСЂРµР· rr_fullname РѕС‚ src_base"
+//#error "РћСЃС‚Р°Р»Р°СЃСЊ С„РёРіРЅСЏ - RRDATA_FILE СЃРґРµР»Р°С‚СЊ С‡РµСЂРµР· С‚Сѓ Р¶Рµ РјР°РєСЂСѓ"
+//#error "Р’С‹РґРµР»РёС‚СЊ РѕР±С‰СѓСЋ С‡Р°СЃС‚СЊ РёР· CREATE_SPECIAL_FILE Рё OPEN_SPECIAL_FILE"
+//#error "РїРѕС‚РѕРј РєР°Рє-С‚Рѕ РїСЂРёСЃРѕР±Р°С‡РёС‚СЊ РґР»СЏ РіРµРЅРµСЂР°С†РёРё РёРјС‘РЅ"
 	char cmdline[ INBUFLEN - 4 ];
 #ifdef __WIN32__
     #ifndef __WATCOMC__
@@ -779,7 +785,7 @@ rrchain_t * rrenc_prepare( char *rrdata_fname, int rrcount, char *rrlist_fname
 #endif /* RR_OEM_API */
 
 	OPEN_SPECIAL_FILE( src, NULL, NULL );
-// создаём выходной файл:
+// СЃРѕР·РґР°С‘Рј РІС‹С…РѕРґРЅРѕР№ С„Р°Р№Р»:
 	CREATE_SPECIAL_FILE( rrlist, NULL, ENC_TGTBASE );
 	if ( rrlist_file != NULL ) {
 		fprintf( rrlist_file, "%d\n"
@@ -797,19 +803,19 @@ rrchain_t * rrenc_prepare( char *rrdata_fname, int rrcount, char *rrlist_fname
 			global_opts.strict_mode ? "-t\n" : "",
 			global_opts.multitrack ? "-u\n" : "" );
 #ifdef RR_CUSTOM_XCD_EXT
-		if ( global_opts.xcd_ext != RR_DEFAULT_XCD_EXT )
+		if ( strcmp( global_opts.xcd_ext, RR_DEFAULT_XCD_EXT ) != 0 )
 			fprintf( rrlist_file, "-e %s\n", global_opts.xcd_ext );
 #endif /* RR_CUSTOM_XCD_EXT */
 		if ( global_opts.volume )
 			fprintf( rrlist_file, "-l %s\n", global_opts.volume );
 		CHECK_SPECIAL_FILE( rrlist );
 	}
-// разбор файла:
+// СЂР°Р·Р±РѕСЂ С„Р°Р№Р»Р°:
 	if ( ( in = rr_create( "RRENC", global_opts.xcd_ext, /* rrcount */ 0,
 					global_opts.src_base,
 			/* global_opts.tgt_base */ /*NULL*/ ENC_TGTBASE,
 #ifdef RR_UPDATE_DIR
-//#error "Кот не валялся"		// и не надо
+//#error "РљРѕС‚ РЅРµ РІР°Р»СЏР»СЃСЏ"		// Рё РЅРµ РЅР°РґРѕ
 					NULL,
 #endif /* RR_UPDATE_DIR */
 					NEED_ABSBASE
@@ -828,7 +834,7 @@ rrchain_t * rrenc_prepare( char *rrdata_fname, int rrcount, char *rrlist_fname
 		goto err01;
 
 //	}
-// создаём выходной файл:
+// СЃРѕР·РґР°С‘Рј РІС‹С…РѕРґРЅРѕР№ С„Р°Р№Р»:
 	CREATE_M2CDM_FILE;
 	CREATE_PLAIN_FILE;
 
@@ -848,11 +854,11 @@ rrchain_t * rrenc_prepare( char *rrdata_fname, int rrcount, char *rrlist_fname
 			continue;
 		}
 		switch ( first[ 0 ] ) {
-			case '#':	// комментарий - не трогаем
+			case '#':	// РєРѕРјРјРµРЅС‚Р°СЂРёР№ - РЅРµ С‚СЂРѕРіР°РµРј
 				if ( rrlist_file != NULL )
 					fprintf( rrlist_file, "%s %s", first, strtok( NULL, "\n" ) );
 //					fputs( inbuf, rrlist_file );
-			case '\0':	// пустая строка - игнорируем
+			case '\0':	// РїСѓСЃС‚Р°СЏ СЃС‚СЂРѕРєР° - РёРіРЅРѕСЂРёСЂСѓРµРј
 				goto no_token;
 			default: {
 					goto sw_err;
@@ -873,7 +879,7 @@ rrchain_t * rrenc_prepare( char *rrdata_fname, int rrcount, char *rrlist_fname
 #else
 					rest = strtok( NULL, "\t\r\n" );
 #endif
-					if ( rest == NULL ) switch ( first[ 1 ] ) {	// ничего нет, кроме ключа
+					if ( rest == NULL ) switch ( first[ 1 ] ) {	// РЅРёС‡РµРіРѕ РЅРµС‚, РєСЂРѕРјРµ РєР»СЋС‡Р°
 							default: {
 									goto sw_err;
 								} break;
@@ -887,7 +893,7 @@ rrchain_t * rrenc_prepare( char *rrdata_fname, int rrcount, char *rrlist_fname
 							default: {
 									goto sw_err;
 								} break;
-							case 'd': {	// каталог
+							case 'd': {	// РєР°С‚Р°Р»РѕРі
 #ifndef RR_IGNORE_DIR
 									SET_FILE_TYPE( -1 );
 									if ( m2cdm_file != NULL )
@@ -897,7 +903,7 @@ rrchain_t * rrenc_prepare( char *rrdata_fname, int rrcount, char *rrlist_fname
 									strcpy( dirbuf1, rest ); strcpy( dirbuf2, rest );
 #else /* RR_IGNORE_DIR */
 									if ( global_opts.process_dir == DIR_EXPLICIT ) {
-//#error "Продолжить здесь"
+//#error "РџСЂРѕРґРѕР»Р¶РёС‚СЊ Р·РґРµСЃСЊ"
 										SET_FILE_TYPE( -1 );
 										if ( m2cdm_file != NULL )
 											fprintf( m2cdm_file, M2CDM_CMD_DIR "\n%s\n", rest );
@@ -933,7 +939,7 @@ rrchain_t * rrenc_prepare( char *rrdata_fname, int rrcount, char *rrlist_fname
 											fprintf( m2cdm_file, "-volume\n%s\n", rest );
 									}
 								} break;
-							case 'c': {	// явный параметр для m2cdm
+							case 'c': {	// СЏРІРЅС‹Р№ РїР°СЂР°РјРµС‚СЂ РґР»СЏ m2cdm
 									SET_FILE_TYPE( -1 );
 									if ( rrlist_file != NULL )
 										fprintf( rrlist_file, "-c %s\n", rest );
@@ -965,7 +971,7 @@ rrchain_t * rrenc_prepare( char *rrdata_fname, int rrcount, char *rrlist_fname
 				"Warning: Some files are NOT compatible with ISO Level 1\n" );
 	}
 #endif /* RR_CHECK_ISO1 */
-	fprintf( rrlist_file, "--\n" );	// конец списка
+	fprintf( rrlist_file, "--\n" );	// РєРѕРЅРµС† СЃРїРёСЃРєР°
 	rr_print( in );
 #if ( defined( RR_OUTPUT_REDIR ) && !defined( NDEBUG ) )
 #ifndef NDEBUG
@@ -1040,7 +1046,7 @@ int main( int argc, char **argv ) {
 	global_opts.program = PROGRAM_RRENC;
 //	global_opts.ogm_len = XCD_DATA_LEN;
 	global_opts.verbose_level = VERBOSE_NORMAL;
-	if ( ( jx = rr_parse_args( argc, argv, long_opts ) ) < 0 ) {	// кривые аргументы
+	if ( ( jx = rr_parse_args( argc, argv, long_opts ) ) < 0 ) {	// РєСЂРёРІС‹Рµ Р°СЂРіСѓРјРµРЅС‚С‹
 	wrong_cmdline:
 		copyright();
 		printf( "Illegal command line" );
@@ -1093,7 +1099,7 @@ int main( int argc, char **argv ) {
 	if ( global_opts.xcd_ext == NULL )
 		global_opts.xcd_ext = RR_DEFAULT_XCD_EXT;
 
-	rrcount = rr_atoi( argv[ 1 ] );	// размер RR-файла
+	rrcount = rr_atoi( argv[ 1 ] );	// СЂР°Р·РјРµСЂ RR-С„Р°Р№Р»Р°
 	if ( ( rrcount <= 0 ) || ( rrcount > MAX_REDUNDANCY ) ) {
 		copyright();
 		printf( "Incorrect size of RR-data" );
@@ -1110,9 +1116,8 @@ int main( int argc, char **argv ) {
 		global_opts.src_base = ".";
 #else /* RR_ALLOW_ABSPATH */
 	if ( global_opts.src_base == NULL ) {
-	src_empty:
 		global_opts.src_base = "";	// explicitly empty
-//#error "Нельзя оставлять NULL - rr_create() / rr_fullname() съезжают с фазы"
+//#error "РќРµР»СЊР·СЏ РѕСЃС‚Р°РІР»СЏС‚СЊ NULL - rr_create() / rr_fullname() СЃСЉРµР·Р¶Р°СЋС‚ СЃ С„Р°Р·С‹"
 		if ( global_opts.process_dir == DIR_EXPLICIT )
 			rr_printmsg( VERBOSE_INFO, "Absolute paths in source list is now allowed.\n" );
 //	} else if ( global_opts.src_base[ 0 ] == '\0' ) {
@@ -1130,7 +1135,7 @@ int main( int argc, char **argv ) {
 					argv[ 2 ]
 #ifdef RR_NEW_ENC
 					, &rrdata
-//#error "Продолжим отсюда"
+//#error "РџСЂРѕРґРѕР»Р¶РёРј РѕС‚СЃСЋРґР°"
 #endif /* RR_NEW_ENC */
 				) ) == NULL )
 		goto abort;
@@ -1141,13 +1146,13 @@ int main( int argc, char **argv ) {
 	}
 	*/
 #ifndef RR_NEW_ENC
-	if ( global_opts.no_readfiles )	// будем читать только RR-header
+	if ( global_opts.no_readfiles )	// Р±СѓРґРµРј С‡РёС‚Р°С‚СЊ С‚РѕР»СЊРєРѕ RR-header
 		start_block = rr_lastfile_tell( in );
 #else /* RR_NEW_ENC */
 	if ( global_opts.no_readfiles ) {
 		start_block = rr_get1st_blk( rrdata );
 		read_len = rr_getblks( rrdata );
-#error "Этим скопируем только header, потом надо будет rr_write'ить нули"
+#error "Р­С‚РёРј СЃРєРѕРїРёСЂСѓРµРј С‚РѕР»СЊРєРѕ header, РїРѕС‚РѕРј РЅР°РґРѕ Р±СѓРґРµС‚ rr_write'РёС‚СЊ РЅСѓР»Рё"
 	}
 #endif /* RR_NEW_ENC */
 	bufblks = BLKNUM;
@@ -1172,7 +1177,7 @@ int main( int argc, char **argv ) {
 			== NULL ) )
 		goto abort;
 	printf( "\n" );
-	rr_seek( in, start_block );	// чтобы читать только RR-header при --no-read-files
+	rr_seek( in, start_block );	// С‡С‚РѕР±С‹ С‡РёС‚Р°С‚СЊ С‚РѕР»СЊРєРѕ RR-header РїСЂРё --no-read-files
 
 	start_time = time( NULL );
 	for (;;) {
@@ -1231,7 +1236,7 @@ int main( int argc, char **argv ) {
 		rr_dump( rr, rrcount, 0, (rrdata_t *) buf );
 	else
 		memset( buf, 0, rrcount * RR_STREAMNUM * OGM_LEN );
-// вывод полученного:
+// РІС‹РІРѕРґ РїРѕР»СѓС‡РµРЅРЅРѕРіРѕ:
 	if ( rr_putrrdata( in, buf ) != ( rrcount * RR_STREAMNUM ) ) {
 		rr_printmsg( VERBOSE_QUIET,
 			"There was an error writing recovery data file\n" );
@@ -1256,5 +1261,5 @@ err:
 	if ( out != -1 )
 		_close( out );
 	return ( rc );
-//#error "Дорисовать вывод подсказки о кодах завершения"
+//#error "Р”РѕСЂРёСЃРѕРІР°С‚СЊ РІС‹РІРѕРґ РїРѕРґСЃРєР°Р·РєРё Рѕ РєРѕРґР°С… Р·Р°РІРµСЂС€РµРЅРёСЏ"
 }

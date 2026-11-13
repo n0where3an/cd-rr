@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
 //rrlist_root_t *root;
 #include "rrfile.h"
 #include "rrl_int.h"
@@ -12,7 +13,7 @@ void rr_nomem_msg( char *prefix, size_t size ) {
 		size );
 }
 rrlist_tree_t *rrlist_make_tree( const char *name, rrlist_mode_t mode ) {
-	// âîçâðàùàåò óêàçàòåëü íà root-dir
+	// Ð²Ð¾Ð·Ð²Ñ€Ð°Ñ‰Ð°ÐµÑ‚ ÑƒÐºÐ°Ð·Ð°Ñ‚ÐµÐ»ÑŒ Ð½Ð° root-dir
 	rrlist_tree_t *tree;
 	int size = sizeof( rrlist_tree_t ) + 1;
 	if ( ( tree = malloc( size ) ) == NULL ) {
@@ -47,7 +48,7 @@ rrlist_tree_t *rrlist_make_tree( const char *name, rrlist_mode_t mode ) {
 }
 int rrlist_add_comment( rrlist_tree_t *tree, const char *comment ) {
 	int len;
-	if ( comment == NULL )	// ïðîñòî âñòàâëÿåì ïóñòóþ ñòðîêó
+	if ( comment == NULL )	// Ð¿Ñ€Ð¾ÑÑ‚Ð¾ Ð²ÑÑ‚Ð°Ð²Ð»ÑÐµÐ¼ Ð¿ÑƒÑÑ‚ÑƒÑŽ ÑÑ‚Ñ€Ð¾ÐºÑƒ
 		comment = "";
 	len = min( strlen( comment ),
 		( RRLIST_MAX_COMMENT_LENGTH - 1 ) - tree->comment_len );
@@ -73,7 +74,7 @@ static rrlist_dir_t *create_subdir( rrlist_dir_t *parent, char *shortname ) {
 		rr_nomem_msg( "RR-list", diritemsize );
 		return ( NULL );
 	}
-// èíèöèàëèçèðóåì:
+// Ð¸Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð¸Ñ€ÑƒÐµÐ¼:
 	INIT_LIST_HEAD( &dir->files );
 	INIT_LIST_HEAD( &dir->subdirs );
 	dir->processed = 0;
@@ -92,7 +93,7 @@ static rrlist_dir_t *create_subdir( rrlist_dir_t *parent, char *shortname ) {
 	} else
 		dir->comments = NULL;
 	dir->depth = parent->depth + 1;
-// âêëþ÷àåì â ñïèñêè:
+// Ð²ÐºÐ»ÑŽÑ‡Ð°ÐµÐ¼ Ð² ÑÐ¿Ð¸ÑÐºÐ¸:
 	list_add_tail( &dir->all_dirs, &dir->tree->all_dirs );
 	list_add_tail( &dir->subdir_of_parent, &parent->subdirs );
 #ifdef RRLIST_COUNTS
@@ -102,31 +103,31 @@ static rrlist_dir_t *create_subdir( rrlist_dir_t *parent, char *shortname ) {
 }
 
 rrlist_dir_t *rrlist_add_dir( rrlist_tree_t *tree, const char *dirname ) {
-// âîçâðàùàåò â êîíöå êîíöîâ êàòàëîã, maybe ñâåæåñîçäàííûé
+// Ð²Ð¾Ð·Ð²Ñ€Ð°Ñ‰Ð°ÐµÑ‚ Ð² ÐºÐ¾Ð½Ñ†Ðµ ÐºÐ¾Ð½Ñ†Ð¾Ð² ÐºÐ°Ñ‚Ð°Ð»Ð¾Ð³, maybe ÑÐ²ÐµÐ¶ÐµÑÐ¾Ð·Ð´Ð°Ð½Ð½Ñ‹Ð¹
 	char
 		realdir[ _MAX_DIR ] /*, name[ _MAX_FNAME ], ext[ _MAX_EXT ],
 		drive[ _MAX_DRIVE ], tmppath[ _MAX_PATH ]*/;
 	rrlist_dir_t *dir; char *level;
 	int newly_created = 0;
 	struct list_head *jp;
-	if ( ( tree->last_dir != NULL ) &&	// êýø íå ïóñò
-		!strcmp( dirname, tree->last_dirname ) ) {	// åñòü â êýøå
+	if ( ( tree->last_dir != NULL ) &&	// ÐºÑÑˆ Ð½Ðµ Ð¿ÑƒÑÑ‚
+		!strcmp( dirname, tree->last_dirname ) ) {	// ÐµÑÑ‚ÑŒ Ð² ÐºÑÑˆÐµ
 		return ( tree->last_dir );
 	}
-// àíàëèçèðóåì:
-	strcpy( realdir, dirname ); dir = &tree->root;	// åñòü âñåãäà
+// Ð°Ð½Ð°Ð»Ð¸Ð·Ð¸Ñ€ÑƒÐµÐ¼:
+	strcpy( realdir, dirname ); dir = &tree->root;	// ÐµÑÑ‚ÑŒ Ð²ÑÐµÐ³Ð´Ð°
 	level = strtok( realdir, "/\\" );
-	while ( level != NULL ) {	// èùåì ïîäõîäÿùèé
+	while ( level != NULL ) {	// Ð¸Ñ‰ÐµÐ¼ Ð¿Ð¾Ð´Ñ…Ð¾Ð´ÑÑ‰Ð¸Ð¹
 		rrlist_dir_t *subdir = NULL;
 		list_for_each( jp, &dir->subdirs ) {
 			rrlist_dir_t *jd = list_entry( jp, rrlist_dir_t, subdir_of_parent );
-			if ( !strcmp( level, jd->shortname ) ) {	// íàøëè
+			if ( !strcmp( level, jd->shortname ) ) {	// Ð½Ð°ÑˆÐ»Ð¸
 				subdir = jd; break;
 			}
 		}
-		if ( subdir == NULL ) {	// íå íàøëè - äåëàåì
+		if ( subdir == NULL ) {	// Ð½Ðµ Ð½Ð°ÑˆÐ»Ð¸ - Ð´ÐµÐ»Ð°ÐµÐ¼
 			subdir = create_subdir( dir, level );
-			if ( newly_created ) {	// åãî ðîäèòåëü - òîæå ñâåæåñîçäàííûé
+			if ( newly_created ) {	// ÐµÐ³Ð¾ Ñ€Ð¾Ð´Ð¸Ñ‚ÐµÐ»ÑŒ - Ñ‚Ð¾Ð¶Ðµ ÑÐ²ÐµÐ¶ÐµÑÐ¾Ð·Ð´Ð°Ð½Ð½Ñ‹Ð¹
 				subdir->comments = dir->comments;
 				dir->comments = NULL;
 			} else
@@ -135,7 +136,7 @@ rrlist_dir_t *rrlist_add_dir( rrlist_tree_t *tree, const char *dirname ) {
 		dir = subdir;
 		level = strtok( NULL, "/\\" );
 	}
-// ãîòîâî:
+// Ð³Ð¾Ñ‚Ð¾Ð²Ð¾:
 	tree->last_dir = dir;
 	strcpy( tree->last_dirname, dirname );
 	if ( newly_created ) {
@@ -149,18 +150,18 @@ rrlist_file_t *rrlist_add_alias(
 static void del_subtree( rrlist_dir_t *dir ) {
 	struct list_head *jp;
 	rrlist_dir_t *jd = NULL;
-// ñíîñèì ïîäêàòàëîãè:
+// ÑÐ½Ð¾ÑÐ¸Ð¼ Ð¿Ð¾Ð´ÐºÐ°Ñ‚Ð°Ð»Ð¾Ð³Ð¸:
 	list_for_each( jp, &dir->subdirs ) {
 		rrlist_dir_t *td = list_entry( jp, rrlist_dir_t, all_dirs );
-		if ( jd != NULL ) free( jd );	// áàõíåì ïðåäûäóùèé (åñëè åñòü)
+		if ( jd != NULL ) free( jd );	// Ð±Ð°Ñ…Ð½ÐµÐ¼ Ð¿Ñ€ÐµÐ´Ñ‹Ð´ÑƒÑ‰Ð¸Ð¹ (ÐµÑÐ»Ð¸ ÐµÑÑ‚ÑŒ)
 		jd = td;
-	// ñíåñ¸ì ïîä-ïîäêàòàëîãè:
+	// ÑÐ½ÐµÑÑ‘Ð¼ Ð¿Ð¾Ð´-Ð¿Ð¾Ð´ÐºÐ°Ñ‚Ð°Ð»Ð¾Ð³Ð¸:
 		del_subtree( jd );
-	// óäàëèì ïîäêàòàëîã èç ñïèñêà "âñå êàòàëîãè"
+	// ÑƒÐ´Ð°Ð»Ð¸Ð¼ Ð¿Ð¾Ð´ÐºÐ°Ñ‚Ð°Ð»Ð¾Ð³ Ð¸Ð· ÑÐ¿Ð¸ÑÐºÐ° "Ð²ÑÐµ ÐºÐ°Ñ‚Ð°Ð»Ð¾Ð³Ð¸"
 		list_del( /*&jd->all_dirs*/ jp );
-		list_del( &jd->subdir_of_parent );	// è èç ðîäèòåëüñêîãî (dir)
+		list_del( &jd->subdir_of_parent );	// Ð¸ Ð¸Ð· Ñ€Ð¾Ð´Ð¸Ñ‚ÐµÐ»ÑŒÑÐºÐ¾Ð³Ð¾ (dir)
 	}
-	if ( jd != NULL ) free( jd );	// áàõíåì ïîñëåäíèé
+	if ( jd != NULL ) free( jd );	// Ð±Ð°Ñ…Ð½ÐµÐ¼ Ð¿Ð¾ÑÐ»ÐµÐ´Ð½Ð¸Ð¹
 #ifdef RRLIST_COUNTS
 	dir->subdir_count = 0;
 #endif /* RRLIST_COUNTS */
@@ -169,31 +170,31 @@ static void del_subtree( rrlist_dir_t *dir ) {
 void rrlist_erase_tree( rrlist_tree_t *tree ) {
 	struct list_head *jp;
 	rrlist_file_t *jf = NULL; rrlist_inode_t *ji = NULL;
-// ñíà÷àëà ïåðåáàõàåì ôàéëû:
+// ÑÐ½Ð°Ñ‡Ð°Ð»Ð° Ð¿ÐµÑ€ÐµÐ±Ð°Ñ…Ð°ÐµÐ¼ Ñ„Ð°Ð¹Ð»Ñ‹:
 	list_for_each( jp, &tree->all_files ) {
 		rrlist_file_t *tf = list_entry( jp, rrlist_file_t, all_files );
-		if ( jf != NULL ) free( jf );	// áàõíåì ïðåäûäóùèé (åñëè åñòü)
+		if ( jf != NULL ) free( jf );	// Ð±Ð°Ñ…Ð½ÐµÐ¼ Ð¿Ñ€ÐµÐ´Ñ‹Ð´ÑƒÑ‰Ð¸Ð¹ (ÐµÑÐ»Ð¸ ÐµÑÑ‚ÑŒ)
 		jf = tf;
-	// óäàëèì ôàéë èç âñåõ ñïèñêîâ:
-		list_del( /*&jf->all_files*/ jp );	// èç ñïèñêà "âñå ôàéëû"
-		list_del( &jf->file_of_dir );				// èç ïîäêàòàëîãà
-		list_del( &jf->file_of_inode );			// èç ëèíêîâ ê èíîäó
+	// ÑƒÐ´Ð°Ð»Ð¸Ð¼ Ñ„Ð°Ð¹Ð» Ð¸Ð· Ð²ÑÐµÑ… ÑÐ¿Ð¸ÑÐºÐ¾Ð²:
+		list_del( /*&jf->all_files*/ jp );	// Ð¸Ð· ÑÐ¿Ð¸ÑÐºÐ° "Ð²ÑÐµ Ñ„Ð°Ð¹Ð»Ñ‹"
+		list_del( &jf->file_of_dir );				// Ð¸Ð· Ð¿Ð¾Ð´ÐºÐ°Ñ‚Ð°Ð»Ð¾Ð³Ð°
+		list_del( &jf->file_of_inode );			// Ð¸Ð· Ð»Ð¸Ð½ÐºÐ¾Ð² Ðº Ð¸Ð½Ð¾Ð´Ñƒ
 #ifdef RRLIST_COUNTS
 		jf->dir->file_count--;
 		jf->inode->link_count--;
 #endif /* RRLIST_COUNTS */
 	}
-	if ( jf != NULL ) free( jf );	// áàõíåì ïîñëåäíèé
-// ñíîñèì èíîäû:
+	if ( jf != NULL ) free( jf );	// Ð±Ð°Ñ…Ð½ÐµÐ¼ Ð¿Ð¾ÑÐ»ÐµÐ´Ð½Ð¸Ð¹
+// ÑÐ½Ð¾ÑÐ¸Ð¼ Ð¸Ð½Ð¾Ð´Ñ‹:
 	list_for_each( jp, &tree->all_inodes ) {
 		rrlist_inode_t *ti = list_entry( jp, rrlist_inode_t, all_inodes );
-		if ( ji != NULL ) free( ji );	// áàõíåì ïðåäûäóùèé (åñëè åñòü)
+		if ( ji != NULL ) free( ji );	// Ð±Ð°Ñ…Ð½ÐµÐ¼ Ð¿Ñ€ÐµÐ´Ñ‹Ð´ÑƒÑ‰Ð¸Ð¹ (ÐµÑÐ»Ð¸ ÐµÑÑ‚ÑŒ)
 		ji = ti;
-	// óäàëèì èíîäó èç ñïèñêà "âñå èíîäû"
+	// ÑƒÐ´Ð°Ð»Ð¸Ð¼ Ð¸Ð½Ð¾Ð´Ñƒ Ð¸Ð· ÑÐ¿Ð¸ÑÐºÐ° "Ð²ÑÐµ Ð¸Ð½Ð¾Ð´Ñ‹"
 		list_del( /*&jf->all_files*/ jp );
 	}
-	if ( ji != NULL ) free( ji );	// áàõíåì ïîñëåäíèé
-// ñàìîå ñëîæíîå - çà÷èñòêà êàòàëîãîâ (äåðåâî)
+	if ( ji != NULL ) free( ji );	// Ð±Ð°Ñ…Ð½ÐµÐ¼ Ð¿Ð¾ÑÐ»ÐµÐ´Ð½Ð¸Ð¹
+// ÑÐ°Ð¼Ð¾Ðµ ÑÐ»Ð¾Ð¶Ð½Ð¾Ðµ - Ð·Ð°Ñ‡Ð¸ÑÑ‚ÐºÐ° ÐºÐ°Ñ‚Ð°Ð»Ð¾Ð³Ð¾Ð² (Ð´ÐµÑ€ÐµÐ²Ð¾)
 	del_subtree( &tree->root );
 	free( tree );
 }
@@ -228,7 +229,7 @@ rrlist_file_t *rrlist_add_file(	// add file into tree - into last created dir
 	}
 	_makepath( file_fullname, NULL, parent->fullname, name, ext );
 	_makepath( file_shortname, NULL, NULL, name, ext );
-// äåëàåì realname
+// Ð´ÐµÐ»Ð°ÐµÐ¼ realname
 	_fullpath( file_realname, ( realname == NULL ) ? file_fullname : realname,
 		_MAX_PATH );
 
@@ -236,11 +237,11 @@ rrlist_file_t *rrlist_add_file(	// add file into tree - into last created dir
 	shortnamelen = strlen( file_shortname );
 	realnamelen = strlen( file_realname );
 	realname_edc = build_edc( file_realname, 0, realnamelen );
-// ïîèñê ïîäõîäÿùåãî inode'à:
+// Ð¿Ð¾Ð¸ÑÐº Ð¿Ð¾Ð´Ñ…Ð¾Ð´ÑÑ‰ÐµÐ³Ð¾ inode'Ð°:
 	if ( realname != NULL ) list_for_each( jp, &tree->all_inodes ) {
 		rrlist_inode_t *ji = list_entry( jp, rrlist_inode_t, all_inodes );
 		if ( ( ji->name_edc == realname_edc ) &&
-				( strcmp( ji->name_edc, file_realname ) == 0 ) ) {	// óðà, èäåíòè÷íûå
+				( strcmp( ji->name_edc, file_realname ) == 0 ) ) {	// ÑƒÑ€Ð°, Ð¸Ð´ÐµÐ½Ñ‚Ð¸Ñ‡Ð½Ñ‹Ðµ
 			inode = ji;
 			break;
 		}
@@ -256,7 +257,7 @@ rrlist_file_t *rrlist_add_file(	// add file into tree - into last created dir
 		rr_nomem_msg( "RR-list", fileitemsize + inodeitemsize );
 		goto fatal;
 	}
-	if ( inodeitemsize != 0 ) {	// ñâåæåñòÿíóòûé
+	if ( inodeitemsize != 0 ) {	// ÑÐ²ÐµÐ¶ÐµÑÑ‚ÑÐ½ÑƒÑ‚Ñ‹Ð¹
 		memset( inode, 0, inodeitemsize );
 		inode->type = type; inode->size = size; inode->time = time;
 		INIT_LIST_HEAD( &inode->links );
@@ -268,7 +269,7 @@ rrlist_file_t *rrlist_add_file(	// add file into tree - into last created dir
 		inode->name_edc = realname_edc;
 		list_add_tail( &inode->all_inodes, &parent->tree->all_inodes );
 //	} else {
-//#error "Âêëþ÷èòü â êîëüöî, âûñòàâèòü type"
+//#error "Ð’ÐºÐ»ÑŽÑ‡Ð¸Ñ‚ÑŒ Ð² ÐºÐ¾Ð»ÑŒÑ†Ð¾, Ð²Ñ‹ÑÑ‚Ð°Ð²Ð¸Ñ‚ÑŒ type"
 	}
 
 	file->fullname = file->strings; strcpy( file->fullname, file_fullname );
@@ -306,29 +307,29 @@ rrlist_file_t *rrlist_next_file( rrlist_file_t *file ) {
 	rrlist_dir_t *dir = file->dir;
 	struct list_head *jp = file->file_of_dir.next;
 	do {
-		if ( jp != &dir->files ) {	// åñòü åù¸ ôàéëû
+		if ( jp != &dir->files ) {	// ÐµÑÑ‚ÑŒ ÐµÑ‰Ñ‘ Ñ„Ð°Ð¹Ð»Ñ‹
 			nextfile = list_entry( jp, rrlist_file_t, file_of_dir );
-			break;	// ãîòîâî
+			break;	// Ð³Ð¾Ñ‚Ð¾Ð²Ð¾
 		}
-// êàòàëîã âåñü
-		if ( !list_empty( &dir->subdirs ) ) {	// óõîäèì ãëóáæå
+// ÐºÐ°Ñ‚Ð°Ð»Ð¾Ð³ Ð²ÐµÑÑŒ
+		if ( !list_empty( &dir->subdirs ) ) {	// ÑƒÑ…Ð¾Ð´Ð¸Ð¼ Ð³Ð»ÑƒÐ±Ð¶Ðµ
 			dir = list_entry( &dir->subdirs.next, rrlist_dir_t, subdir_of_parent );
 			jp = dir->files.next;
 			continue;
 		}
 next_subdir:
-// ãëóáæå íåêóäà - óõîäèì â ñîñåäíèé êàòàëîã
-//#error "ïðîäîëæèòü çäåñü"
-		if ( dir->parent == NULL )	// ýòî áûë êîðíåâîé, èñêàòü áîëüøå íå÷à
+// Ð³Ð»ÑƒÐ±Ð¶Ðµ Ð½ÐµÐºÑƒÐ´Ð° - ÑƒÑ…Ð¾Ð´Ð¸Ð¼ Ð² ÑÐ¾ÑÐµÐ´Ð½Ð¸Ð¹ ÐºÐ°Ñ‚Ð°Ð»Ð¾Ð³
+//#error "Ð¿Ñ€Ð¾Ð´Ð¾Ð»Ð¶Ð¸Ñ‚ÑŒ Ð·Ð´ÐµÑÑŒ"
+		if ( dir->parent == NULL )	// ÑÑ‚Ð¾ Ð±Ñ‹Ð» ÐºÐ¾Ñ€Ð½ÐµÐ²Ð¾Ð¹, Ð¸ÑÐºÐ°Ñ‚ÑŒ Ð±Ð¾Ð»ÑŒÑˆÐµ Ð½ÐµÑ‡Ð°
 			break;
-// óõîäèì â ñëåäóþùèé ïîäêàòàëîã
-		if ( dir->subdir_of_parent.next != &dir->parent->subdirs ) {	// ñîñåäíèé åñòü
+// ÑƒÑ…Ð¾Ð´Ð¸Ð¼ Ð² ÑÐ»ÐµÐ´ÑƒÑŽÑ‰Ð¸Ð¹ Ð¿Ð¾Ð´ÐºÐ°Ñ‚Ð°Ð»Ð¾Ð³
+		if ( dir->subdir_of_parent.next != &dir->parent->subdirs ) {	// ÑÐ¾ÑÐµÐ´Ð½Ð¸Ð¹ ÐµÑÑ‚ÑŒ
 			dir = list_entry( &dir->subdir_of_parent.next, rrlist_dir_t, subdir_of_parent );
 			jp = dir->files.next;
 			continue;
 		}
-// óõîäèì â êàòàëîã, ñëåäóþùèé ïîñëå ðîäèòåëüñêîãî
-		dir = dir->parent; goto next_subdir;	// êàòàëîã óæå îáðàáàòûâàëñÿ
+// ÑƒÑ…Ð¾Ð´Ð¸Ð¼ Ð² ÐºÐ°Ñ‚Ð°Ð»Ð¾Ð³, ÑÐ»ÐµÐ´ÑƒÑŽÑ‰Ð¸Ð¹ Ð¿Ð¾ÑÐ»Ðµ Ñ€Ð¾Ð´Ð¸Ñ‚ÐµÐ»ÑŒÑÐºÐ¾Ð³Ð¾
+		dir = dir->parent; goto next_subdir;	// ÐºÐ°Ñ‚Ð°Ð»Ð¾Ð³ ÑƒÐ¶Ðµ Ð¾Ð±Ñ€Ð°Ð±Ð°Ñ‚Ñ‹Ð²Ð°Ð»ÑÑ
 	} while ( file == NULL );
 	return ( file );
 }
@@ -382,7 +383,7 @@ int rrlist_process_files( rrlist_tree_t *tree, process_dir_func_t *dir_func,
 	jd->processed = 1;
 	list_for_each( jp, &tree->all_files ) {
 		rrlist_file_t *jf = list_entry( jp, rrlist_file_t, all_files );
-		if ( ( dir_func != NULL ) && ( jf->dir != jd ) ) {	// ñìåíà êàòàëîãà
+		if ( ( dir_func != NULL ) && ( jf->dir != jd ) ) {	// ÑÐ¼ÐµÐ½Ð° ÐºÐ°Ñ‚Ð°Ð»Ð¾Ð³Ð°
 			jd = jf->dir;
 			dir_func( opaque, jd, jd->fullname, jd->shortname, jd->depth,
 					jd->processed ? NULL : jd->comments );
@@ -390,7 +391,7 @@ int rrlist_process_files( rrlist_tree_t *tree, process_dir_func_t *dir_func,
 		}
 		process_file( jf, file_func, opaque );
 	}
-	if ( tree->comment_len > 0 ) {	// îñòàëèñü áåñõîçíûå êîììåíòàðèè - âûâîäèì
+	if ( tree->comment_len > 0 ) {	// Ð¾ÑÑ‚Ð°Ð»Ð¸ÑÑŒ Ð±ÐµÑÑ…Ð¾Ð·Ð½Ñ‹Ðµ ÐºÐ¾Ð¼Ð¼ÐµÐ½Ñ‚Ð°Ñ€Ð¸Ð¸ - Ð²Ñ‹Ð²Ð¾Ð´Ð¸Ð¼
 		file_func( opaque, NULL, NULL, NULL, NULL, -1, -1,
 			'c', NULL, tree->last_comment );
 	}

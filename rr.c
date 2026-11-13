@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
 #include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -66,7 +67,7 @@
 		} while (0)
 #endif /* RR_LEGALZERO */
 
-int rr_parse_args( int argc, const char * const *argv, 
+int rr_parse_args( int argc, char * const *argv, 
 const struct option *long_opts ) {
 	char short_opts[ MAX_OPTS + 1 ] = "+";
 	int jx, jy, next_option;
@@ -79,13 +80,13 @@ const struct option *long_opts ) {
 		!( ( _fstat( _fileno( stdout ), &stat_buf ) == 0 )
 			&& ( stat_buf.st_mode == _S_IFCHR ) );
 #endif /* RR_OUTPUT_REDIR */
-	global_opts.process_dir = DIR_EXTRACT;	// по умолчанию
+	global_opts.process_dir = DIR_EXTRACT;	// РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
 	for ( jx = 0, jy = strlen( short_opts ); 
 		( ( jy < MAX_OPTS - 2 ) && ( long_opts[ jx ].name != NULL ) ); jx++ ) {
 		short_opts[ jy++ ] = (char) long_opts[ jx ].val;
-		if ( long_opts[ jx ].has_arg ) {	// нужен аргумент
+		if ( long_opts[ jx ].has_arg ) {	// РЅСѓР¶РµРЅ Р°СЂРіСѓРјРµРЅС‚
 			short_opts[ jy++ ] = ':';
-			if ( long_opts[ jx ].has_arg > 1 ) {	// необязательный
+			if ( long_opts[ jx ].has_arg > 1 ) {	// РЅРµРѕР±СЏР·Р°С‚РµР»СЊРЅС‹Р№
 				short_opts[ jy++ ] = ':';
 			}
 		}
@@ -154,6 +155,8 @@ const struct option *long_opts ) {
 								global_opts.fake_output = 1;
 								global_opts.no_readfiles = 1;
 							}	break;
+						default:
+							break;
 					}
 				} break;
 			case 'k': {
@@ -314,37 +317,30 @@ wrong_arg:
 }
 #ifndef __WIN32__
 void  _splitpath(const char* path, char* drive,  char* dir,  char* fname,  char* ext ) {
+	// POSIX-Р·Р°РјРµРЅР° _splitpath() РёР· MSVCRT. РћС‚Р»РёС‡РёРµ: ext - Р±РµР· РІРµРґСѓС‰РµР№ С‚РѕС‡РєРё.
 	char tmppath[_MAX_PATH];
-	int li;
+	const char *base, *dot;
+	size_t li;
 	if (drive) {
 		drive[0]=0;}
 	if (dir) {
-		strcpy(tmppath,path);
+		strncpy(tmppath, path, _MAX_PATH - 1); tmppath[_MAX_PATH - 1] = 0;
 		strcpy(dir,dirname (tmppath));
 		li= strlen(dir);
 		if (li && *(dir + li - 1) != '/') //47
 			strcat(dir, "/");
 	}
-	if (fname) {
-		strcpy(tmppath,path);
-		strcpy(fname,basename(tmppath));}
+	base = strrchr(path, '/');
+	base = ( base == NULL ) ? path : base + 1;
+	dot = strrchr(base, '.');
+	if (fname) {	// РёРјСЏ Р±РµР· РєР°С‚Р°Р»РѕРіР° Рё Р±РµР· СЂР°СЃС€РёСЂРµРЅРёСЏ
+		li = ( dot == NULL ) ? strlen(base) : (size_t) ( dot - base );
+		memcpy(fname, base, li);
+		fname[li] = 0;
+	}
 	if (ext) {
-		for( li = strlen(fname)-1; li >= 0; li--)
-		{
-			switch (fname[li]) {
-				case '/': {
-						ext[0]=0;
-						return;
-					}
-				case '.': {
-						//detect extension
-						strcpy (ext,(fname+li+1));	
-						fname [li]=0;
-						return;
-					}
-			}
-		}
-	}	
+		strcpy(ext, ( dot == NULL ) ? "" : dot + 1);
+	}
 }
 
 void _makepath(char *path, const char *drive, const char *dir, const char *fname, const char *ext){
@@ -389,11 +385,11 @@ struct stat *dummy ) {
 		if ( dirend > path ) *dirend = 0;
 		_splitpath( path, NULL, dir, fname, ext );
 	makedir:
-//#error "Разобраться, что делать, если fullname == \"nul\""
+//#error "Р Р°Р·РѕР±СЂР°С‚СЊСЃСЏ, С‡С‚Рѕ РґРµР»Р°С‚СЊ, РµСЃР»Рё fullname == \"nul\""
 		_makepath( tmppath, drive, dir, fname, ext );
 #ifdef __WIN32__			
 // %%% Microsoft specific: %%%
-		if ( strcmp( tmppath, "\\\\." ) == 0 ) {	// скорее всего имя девайса
+		if ( strcmp( tmppath, "\\\\." ) == 0 ) {	// СЃРєРѕСЂРµРµ РІСЃРµРіРѕ РёРјСЏ РґРµРІР°Р№СЃР°
 			rr_printmsg( VERBOSE_QUIET,
 				"target dir %s: is a system-internal object\n", tmppath );
 			return ( 0 );
@@ -413,7 +409,7 @@ struct stat *dummy ) {
 			if ( ( rc = mkdir( tmppath,0777 ) ) != 0 ) {
 #endif /*__WIN32__*/
 				if ( ( rc = errno ) == ENOENT ) {
-					if ( ( rc = makeabsdir( dir, drive, tmppath, dummy ) ) != 0 ) {	// не удалось создать
+					if ( ( rc = makeabsdir( dir, drive, tmppath, dummy ) ) != 0 ) {	// РЅРµ СѓРґР°Р»РѕСЃСЊ СЃРѕР·РґР°С‚СЊ
 						return ( rc );
 					}
 					goto makedir;
@@ -516,7 +512,8 @@ int rr_ferror( FILE *file, char *fname, char *comment ) {
 }
 
 #ifdef RR_CHECK_ISO1
-int is_legal( unsigned char *word ) {
+int is_legal( const char *name ) {
+	const unsigned char *word = (const unsigned char *) name;
 	while ( *word != '\0' ) {
 		if ( !( ( *word == ( unsigned char ) '_' ) || 
 				( ( *word >= (unsigned char) '0' ) && ( *word <= (unsigned char) '9' ) ) ||
@@ -538,7 +535,7 @@ int rr_check_iso1( char *fullname ) {
 		!is_legal( name ) || !is_legal( ext2 ) )
 		return (0);	// is not complaint to iso level 1
 	jx = strlen( dir );
-//#error "циклит при jx == 1"
+//#error "С†РёРєР»РёС‚ РїСЂРё jx == 1"
 	while ( ( jx > 0 ) && ( dir[ jx - 1 ] == '\\' ) ) {
 		dir[ --jx ] = '\0';
 	}
@@ -561,7 +558,7 @@ char *rr_combo_name( char *outname, const char *base, const char *name ) {
 
 #endif /* RR_TEST_ONLY */
 
-// для отладки:
+// РґР»СЏ РѕС‚Р»Р°РґРєРё:
 #ifdef MALLOC_DEBUG
 
 #undef malloc
@@ -610,13 +607,13 @@ size_t rr_timeline( time_t delta, char *buf ) {
 	char *min_fmt = "%d min ";
 
 	if ( hrs ) {
-		len = sprintf( buf, "%d hr ", hrs ); buf += len; min_fmt = "%02d min ";
+		len = sprintf( buf, "%d hr ", (int) hrs ); buf += len; min_fmt = "%02d min ";
 	}
-	len = sprintf( buf, min_fmt, mins ); buf += len;
-	len = sprintf( buf, "%02d", delta % 60 ); buf += len;
+	len = sprintf( buf, min_fmt, (int) mins ); buf += len;
+	len = sprintf( buf, "%02d", (int) ( delta % 60 ) ); buf += len;
 #else /* TIMELINE_LONG */
-	len = sprintf( buf, "%d:%02d:%02d", delta / 3600, ( delta / 60 ) % 60,
-			delta % 60 );
+	len = sprintf( buf, "%d:%02d:%02d", (int) ( delta / 3600 ),
+			(int) ( ( delta / 60 ) % 60 ), (int) ( delta % 60 ) );
 	buf += len;
 #endif /* TIMELINE_LONG */
 	return ( len );
@@ -719,7 +716,7 @@ int rr_printmsg( verbose_t verbose, char *fmt, ... ) {
 	va_list args; va_start( args, fmt );
 #ifdef RR_BARE_OUTPUT
 	#ifndef RR_TEST_ONLY
-	if ( global_opts.bare_status ) {	// не выводить ничего?
+	if ( global_opts.bare_status ) {	// РЅРµ РІС‹РІРѕРґРёС‚СЊ РЅРёС‡РµРіРѕ?
 		return (0);
 	}
 	#endif /* RR_TEST_ONLY */
@@ -750,7 +747,7 @@ int rr_make_seclen( int type ) {
 	}
 }
 #ifdef RR_NEW_ENC
-#if 0 /* и на фига я это впихнул ? */
+#if 0 /* Рё РЅР° С„РёРіР° СЏ СЌС‚Рѕ РІРїРёС…РЅСѓР» ? */
 int rr_readchain( rrchain_t *rrchain, char *buf,
 int bufblks, int max_dose, rrtable_t *rr, int *error_count ) {
 	int jx, jy = 0, total_blks = 0, buf_errs;
@@ -845,7 +842,7 @@ char **errlocs, rritem_t *decoy ) {
 		errlocs[ jx ] = buf + ( jx * OGM_LEN );
 	}
 	memset( buf, 0, errcount * OGM_LEN );
-//#error "Неинициализированный массив errlocs"
+//#error "РќРµРёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°РЅРЅС‹Р№ РјР°СЃСЃРёРІ errlocs"
 	if ( rr_restore( rr, total_blks / RR_STREAMNUM, 
 			OGM_LEN, errcount, errnums, (rrdata_t **) errlocs ) == 0 ) {
 //low_rrdata:
@@ -853,7 +850,7 @@ char **errlocs, rritem_t *decoy ) {
 	}
 	if ( /*global_opts.check*/ decoy != NULL ) {
 		int check_len = rr_blklen( rrchain );
-		for ( jy = errcount - RR_STREAMNUM; jy < errcount; jy++ ) {	// всегда в конце
+		for ( jy = errcount - RR_STREAMNUM; jy < errcount; jy++ ) {	// РІСЃРµРіРґР° РІ РєРѕРЅС†Рµ
 			char *check_buf = errlocs[ jy ];
 			for ( jx = 0; jx < check_len; jx++ ) if ( check_buf[ jx ] != 0 ) {
 					rr_printmsg( VERBOSE_QUIET, "Extra check FAILED - source files are UNUSABLE!\n" );
@@ -864,7 +861,7 @@ char **errlocs, rritem_t *decoy ) {
 		errcount -= RR_STREAMNUM;
 	}
 	if ( !( CHECK_ONLY || ( /*global_opts.check*/
-			/*( decoy != NULL ) &&*/ ( errcount == 0 ) ) ) ) {	// только обманка
+			/*( decoy != NULL ) &&*/ ( errcount == 0 ) ) ) ) {	// С‚РѕР»СЊРєРѕ РѕР±РјР°РЅРєР°
 		rr_printmsg( VERBOSE_NORMAL, "Writing repaired sectors " );
 		for ( jx = 0; jx < errcount; jx++ ) {
 			rr_seek( rrchain, errnums[ jx ] );
